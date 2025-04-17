@@ -438,7 +438,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   horizontalSpeed: 5
   forwardSpeed: 5
-  lateralAdjustment: 0
+  lateralAdjustment: -0.215
 --- !u!50 &738185979
 Rigidbody2D:
   serializedVersion: 5

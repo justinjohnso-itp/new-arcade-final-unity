@@ -31,9 +31,26 @@ public class PlayerController : MonoBehaviour
         Vector2 adjustedForwardDir = forwardDir + rightDir * lateralAdjustment * 0.2f;
         adjustedForwardDir.Normalize(); // Ensure we maintain a unit vector
         
-        // Combine adjusted forward motion with player steering
-        Vector2 velocity = adjustedForwardDir * forwardSpeed
-                         + rightDir * horizontalInput * horizontalSpeed;
-        rb.linearVelocity = velocity;
+        // Calculate the two movement components separately
+        Vector2 forwardMotion = adjustedForwardDir * forwardSpeed;
+        Vector2 lateralMotion = rightDir * horizontalInput * horizontalSpeed;
+        
+        // Combine motions - but maintain consistent forward speed
+        if (horizontalInput != 0)
+        {
+            // If steering, ensure forward component remains constant
+            // Project forwardMotion onto adjustedForwardDir to maintain forward speed
+            float currentForwardSpeed = Vector2.Dot(forwardMotion + lateralMotion, adjustedForwardDir);
+            float speedAdjustment = forwardSpeed / currentForwardSpeed;
+            
+            // Only apply adjustment to forward component, not lateral
+            Vector2 velocity = forwardMotion * speedAdjustment + lateralMotion;
+            rb.linearVelocity = velocity;
+        }
+        else
+        {
+            // Without steering, just use standard forward motion
+            rb.linearVelocity = forwardMotion;
+        }
     }
 }
