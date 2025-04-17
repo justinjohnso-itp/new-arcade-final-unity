@@ -1,4 +1,4 @@
-# README
+# New Arcade Final Game (Isometric Infinite Scroller)
 
 ## Overview
 
