@@ -8,7 +8,7 @@ public class LevelGenerator : MonoBehaviour
     public List<GameObject> chunkPrefabs;
     [Tooltip("How many chunks to preload at start")]
     public int initialChunks = 3;
-    [Tooltip("Vertical size (world units) of each chunk")]
+    [Tooltip("Length (world units) of each chunk along travel direction")]
     public float chunkLength = 20f;
     [Tooltip("Optional parent transform for spawned chunks")]
     public Transform chunkParent;
@@ -16,14 +16,18 @@ public class LevelGenerator : MonoBehaviour
     // internal list of currently active chunks
     private readonly List<GameObject> activeChunks = new List<GameObject>();
     private Transform cam;
+    private Vector3 forwardDir;
 
     void Start()
     {
         cam = Camera.main.transform;
-        // preload initial chunks stacked vertically
+        // use global forward direction (30° from east, which is 15° east of northeast)
+        forwardDir = GameSettings.ForwardDirection;
+
+        // preload initial chunks along forwardDir
         for (int i = 0; i < initialChunks; i++)
         {
-            Vector3 pos = Vector3.up * i * chunkLength;
+            Vector3 pos = forwardDir * i * chunkLength;
             SpawnChunk(pos);
         }
     }
@@ -32,19 +36,22 @@ public class LevelGenerator : MonoBehaviour
     {
         if (activeChunks.Count == 0) return;
 
-        // 1) Spawn ahead when camera nears the end of the last chunk
+        // project camera and chunks onto forwardDir to get "distance along path"
+        float camDist = Vector3.Dot(cam.position, forwardDir);
+
+        // 1) Spawn ahead when camera nears end of last chunk
         var last = activeChunks[activeChunks.Count - 1];
-        float spawnY = last.transform.position.y + (chunkLength * 0.5f);
-        if (cam.position.y >= spawnY)
+        float lastDist = Vector3.Dot(last.transform.position, forwardDir);
+        if (camDist >= lastDist)
         {
-            Vector3 nextPos = last.transform.position + Vector3.up * chunkLength;
+            Vector3 nextPos = last.transform.position + forwardDir * chunkLength;
             SpawnChunk(nextPos);
         }
 
-        // 2) Destroy behind when a chunk falls far below the camera
+        // 2) Destroy behind when chunk falls far behind camera
         var first = activeChunks[0];
-        float destroyY = cam.position.y - (chunkLength * 1.5f);
-        if (first.transform.position.y < destroyY)
+        float firstDist = Vector3.Dot(first.transform.position, forwardDir);
+        if (firstDist < camDist - chunkLength * 1.5f)
         {
             Destroy(first);
             activeChunks.RemoveAt(0);
