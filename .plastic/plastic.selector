@@ -1,0 +1,4 @@
+repository "[ARC] Infinite Scroller@jj4123@cloud"
+  path "/"
+    br "/main"
+    co "/main"
