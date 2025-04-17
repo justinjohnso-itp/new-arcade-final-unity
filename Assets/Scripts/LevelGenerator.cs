@@ -42,7 +42,7 @@ public class LevelGenerator : MonoBehaviour
         // 1) Spawn ahead when camera nears end of last chunk
         var last = activeChunks[activeChunks.Count - 1];
         float lastDist = Vector3.Dot(last.transform.position, forwardDir);
-        if (camDist >= lastDist)
+        if (camDist >= lastDist - chunkLength * 1.5f)
         {
             Vector3 nextPos = last.transform.position + forwardDir * chunkLength;
             SpawnChunk(nextPos);

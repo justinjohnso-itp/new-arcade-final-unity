@@ -7,7 +7,10 @@ public class PlayerController : MonoBehaviour
     [Tooltip("Horizontal (lateral) movement speed")]
     public float horizontalSpeed = 5f;
     [Tooltip("Automatic forward movement speed")]
-    public float forwardSpeed = 1f;
+    public float forwardSpeed = 5f;
+    [Tooltip("Adjust forward direction slightly along the isometric Y axis (-1 to 1)")]
+    [Range(-1f, 1f)]
+    public float lateralAdjustment = 0f;
 
     private Rigidbody2D rb;
 
@@ -21,14 +24,16 @@ public class PlayerController : MonoBehaviour
         // Read input for both keyboard and joystick
         float horizontalInput = Input.GetAxis("Horizontal");
 
-        // Adjust forward direction to match the natural orientation of chunk prefabs
-        // Use northeast (1,1) since the chunks aren't being rotated and likely built for this direction
-        Vector2 forwardDir = new Vector2(1f, 1f).normalized;
-        Vector2 rightDir = new Vector2(forwardDir.y, -forwardDir.x).normalized;
-
-        // Combine automatic forward motion with player steering
-        Vector2 velocity = forwardDir * forwardSpeed
-                         + rightDir   * horizontalInput * horizontalSpeed;
+        Vector2 forwardDir = GameSettings.ForwardDirection;
+        Vector2 rightDir = GameSettings.IsometricYDirection;
+        
+        // Apply lateral adjustment to forward direction
+        Vector2 adjustedForwardDir = forwardDir + rightDir * lateralAdjustment * 0.2f;
+        adjustedForwardDir.Normalize(); // Ensure we maintain a unit vector
+        
+        // Combine adjusted forward motion with player steering
+        Vector2 velocity = adjustedForwardDir * forwardSpeed
+                         + rightDir * horizontalInput * horizontalSpeed;
         rb.linearVelocity = velocity;
     }
 }
