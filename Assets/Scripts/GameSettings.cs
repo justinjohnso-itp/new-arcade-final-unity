@@ -8,10 +8,9 @@ public static class GameSettings
     
     static GameSettings()
     {
-        // Standard isometric projection uses 2:1 ratio (x:y)
-        // This creates a 26.57° angle from horizontal (not 30° which would be a true dimetric projection)
+        // Standard isometric projection (2:1 ratio)
         Vector2 isoXAxis = new Vector2(2f, 1f).normalized;
-        Vector2 isoYAxis = new Vector2(2f, -1f).normalized; // Perpendicular to X in isometric view
+        Vector2 isoYAxis = new Vector2(2f, -1f).normalized; // Perpendicular in isometric view
         
         ForwardDirection = isoXAxis;
         IsometricYDirection = isoYAxis;

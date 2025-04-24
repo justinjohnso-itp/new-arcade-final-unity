@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic; // Required for Lists
+using System.Linq; // Required for LINQ methods like Where, Select, Distinct
 
 public class LevelGenerator : MonoBehaviour
 {
@@ -50,7 +51,7 @@ public class LevelGenerator : MonoBehaviour
     // Zone Group Tracking
     private int chunksInCurrentGroup = 0;
     private int zonesInCurrentGroup = 0;
-    // Temporary list for building placement checks within a single chunk
+    // Temp list for building placement checks
     private List<float> currentChunkBuildingPositionsX = new List<float>();
 
 
@@ -63,7 +64,7 @@ public class LevelGenerator : MonoBehaviour
         if (startChunkPrefab == null)
         {
             Debug.LogError("LevelGenerator: Start Chunk Prefab is not assigned!");
-            this.enabled = false; // Disable component if setup is invalid
+            this.enabled = false;
             return;
         }
         if (FindStartPosition(startChunkPrefab) == null || FindEndPosition(startChunkPrefab) == null)
@@ -74,33 +75,28 @@ public class LevelGenerator : MonoBehaviour
         }
         if (chunkPrefabs == null || chunkPrefabs.Count == 0)
         {
-            Debug.LogWarning("LevelGenerator: No random chunk prefabs assigned. Only the start chunk will be spawned initially.");
-            // Allow continuing with only the start chunk
+            Debug.LogWarning("LevelGenerator: No random chunk prefabs assigned.");
         }
-        // Optionally add checks for Start/End position in random prefabs here too
 
         // --- Spawn Start Chunk --- 
-        Vector3 currentSpawnPosition = Vector3.zero; // Start at origin
+        Vector3 currentSpawnPosition = Vector3.zero;
         GameObject startInstance = Instantiate(startChunkPrefab, currentSpawnPosition, Quaternion.identity, chunkParent);
         activeChunks.Add(startInstance);
         Transform lastEndPosition = FindEndPosition(startInstance);
-        if (lastEndPosition == null) { /* Already checked, but defensive */ return; }
+        if (lastEndPosition == null) return;
 
         // --- Spawn Additional Initial Chunks --- 
         for (int i = 0; i < initialChunks; i++)
         {
-            if (chunkPrefabs == null || chunkPrefabs.Count == 0) break; // No random prefabs to spawn
+            if (chunkPrefabs == null || chunkPrefabs.Count == 0) break;
 
-            // Select a random prefab from the list
             int idx = Random.Range(0, chunkPrefabs.Count);
             GameObject prefabToSpawn = chunkPrefabs[idx];
-
-            // Spawn the next chunk aligned to the previous one's end position
             GameObject newChunkInstance = SpawnChunk(prefabToSpawn, lastEndPosition.position);
 
             if (newChunkInstance != null)
             {
-                lastEndPosition = FindEndPosition(newChunkInstance); // Update for the next iteration
+                lastEndPosition = FindEndPosition(newChunkInstance);
                 if (lastEndPosition == null)
                 {
                     Debug.LogError($"LevelGenerator: Spawned chunk '{newChunkInstance.name}' is missing EndPosition. Stopping initial spawn.", newChunkInstance);
@@ -109,60 +105,49 @@ public class LevelGenerator : MonoBehaviour
             }
             else
             {
-                Debug.LogWarning($"LevelGenerator: Failed to spawn initial random chunk (Prefab: {prefabToSpawn.name}). Check prefab setup.");
-                // Decide if we should stop or just skip this one
-                // break; // Uncomment to stop if any random chunk fails
+                Debug.LogWarning($"LevelGenerator: Failed to spawn initial random chunk (Prefab: {prefabToSpawn.name}).");
+                // break; // Optionally stop if any random chunk fails
             }
         }
 
-        // --- Enable Update checks ---
-        canCheckSpawning = true; // Allow Update to start checking spawn/destroy conditions
-
-        // Initialize zone counters
+        canCheckSpawning = true;
         chunksInCurrentGroup = 0;
         zonesInCurrentGroup = 0;
     }
 
     void Update()
     {
-        // Wait until Start has finished initial setup and there are chunks
         if (!canCheckSpawning || activeChunks.Count == 0) return; 
 
-        // project camera and chunks onto forwardDir to get "distance along path"
         float camDist = Vector3.Dot(cam.position, forwardDir);
 
-        // 1) Spawn ahead when camera nears end of last chunk
+        // 1) Spawn ahead
         var lastChunk = activeChunks[activeChunks.Count - 1];
-        if (lastChunk == null) return; // Safety check
-
+        if (lastChunk == null) return;
         float lastDist = Vector3.Dot(lastChunk.transform.position, forwardDir);
-
         bool shouldSpawn = camDist >= lastDist - spawnTriggerDistance;
 
-        if (shouldSpawn) // Use the calculated boolean
+        if (shouldSpawn)
         {
             Transform lastEndPos = FindEndPosition(lastChunk);
             if (lastEndPos != null)
             {
                 if (chunkPrefabs != null && chunkPrefabs.Count > 0)
                 {
-                    // Select a random prefab and spawn it
                     int idx = Random.Range(0, chunkPrefabs.Count);
                     GameObject prefabToSpawn = chunkPrefabs[idx];
                     GameObject spawnedInUpdate = SpawnChunk(prefabToSpawn, lastEndPos.position);
                 }
-                // else: No random prefabs defined, do nothing
             }
             else
             {
-                 Debug.LogError($"LevelGenerator: Last active chunk '{lastChunk.name}' is missing 'EndPosition' child. Cannot spawn next chunk.", lastChunk);
+                 Debug.LogError($"LevelGenerator: Last active chunk '{lastChunk.name}' is missing 'EndPosition'. Cannot spawn next.", lastChunk);
             }
         }
 
-        // 2) Destroy behind when chunk falls far behind camera
-        var firstChunk = activeChunks[0]; // Use FirstOrDefault for safety
+        // 2) Destroy behind
+        var firstChunk = activeChunks[0];
         if (firstChunk == null) return;
-
         float firstDist = Vector3.Dot(firstChunk.transform.position, forwardDir);
 
         if (firstDist < camDist - destroyDistanceBehind)
@@ -172,46 +157,35 @@ public class LevelGenerator : MonoBehaviour
         }
     }
 
-    // Spawns a specific prefab, aligning its StartPosition to the targetAlignmentPosition.
+    // Spawns a prefab, aligning its StartPosition to the targetAlignmentPosition.
     private GameObject SpawnChunk(GameObject prefabToSpawn, Vector3 targetAlignmentPosition)
     {
-        // --- Validate Prefab ---
         Transform startPosTransform = FindStartPosition(prefabToSpawn);
-        Transform endPosTransform = FindEndPosition(prefabToSpawn); // Check EndPosition on prefab too
+        Transform endPosTransform = FindEndPosition(prefabToSpawn);
 
         if (startPosTransform == null || endPosTransform == null)
         {
-             Debug.LogError($"LevelGenerator: Prefab '{prefabToSpawn.name}' is missing StartPosition or EndPosition. Skipping spawn.", prefabToSpawn);
+             Debug.LogError($"LevelGenerator: Prefab '{prefabToSpawn.name}' is missing StartPosition or EndPosition. Skipping.", prefabToSpawn);
              return null;
         }
 
-        // --- Calculate Spawn Position ---
-        // Calculate offset from prefab root to StartPosition explicitly
-        // This handles nested StartPosition objects correctly.
         Vector3 startOffset = prefabToSpawn.transform.InverseTransformPoint(startPosTransform.position);
-
-        // The core alignment calculation: Spawn root so that StartPosition lands on target
         Vector3 spawnPosition = targetAlignmentPosition - startOffset;
 
-        // --- Instantiate ---
         var chunkInstance = Instantiate(prefabToSpawn, spawnPosition, Quaternion.identity, chunkParent);
         activeChunks.Add(chunkInstance);
 
-        // --- Spawn Obstacles ---
         SpawnObstaclesOnChunk(chunkInstance);
 
-        // --- Spawn Buildings & Activate Zones (Only for Road chunks) ---
-        // Check if the spawned chunk is a "Road" type (e.g., by name or tag - using name here)
-        if (prefabToSpawn.name.Contains("LevelPart_Road")) // Adjust check if needed
+        // Spawn Buildings & Activate Zones only for Road chunks
+        if (prefabToSpawn.name.Contains("LevelPart_Road"))
         {
             SpawnBuildingsAndZonesOnChunk(chunkInstance);
 
-            // --- Update Zone Group Counters ---
+            // Update Zone Group Counters
             chunksInCurrentGroup++;
             if (chunksInCurrentGroup >= zoneGroupSize)
             {
-                // Reset group for the next set of chunks
-                // Debug.Log($"Zone Group Reset. Zones in last group: {zonesInCurrentGroup}");
                 chunksInCurrentGroup = 0;
                 zonesInCurrentGroup = 0;
             }
@@ -222,88 +196,57 @@ public class LevelGenerator : MonoBehaviour
 
     private void SpawnObstaclesOnChunk(GameObject chunkInstance)
     {
-        if (obstaclePrefabs == null || obstaclePrefabs.Count == 0 || maxObstaclesPerChunk <= 0)
-        {
-            return; // No obstacles defined or spawning disabled
-        }
+        if (obstaclePrefabs == null || obstaclePrefabs.Count == 0 || maxObstaclesPerChunk <= 0) return;
 
-        // Find the designated spawn area within the chunk instance
         Transform spawnAreaTransform = chunkInstance.transform.Find("ObstacleSpawnArea");
         if (spawnAreaTransform == null)
         {
-            Debug.LogWarning($"Chunk '{chunkInstance.name}' is missing 'ObstacleSpawnArea' child. Cannot spawn obstacles.", chunkInstance);
+            Debug.LogWarning($"Chunk '{chunkInstance.name}' is missing 'ObstacleSpawnArea'. Cannot spawn obstacles.", chunkInstance);
             return;
         }
 
-        // --- MODIFIED: Look for PolygonCollider2D ---
         PolygonCollider2D spawnBoundsCollider = spawnAreaTransform.GetComponent<PolygonCollider2D>();
         if (spawnBoundsCollider == null)
         {
-            // --- MODIFIED: Updated warning message ---
-            Debug.LogWarning($"'ObstacleSpawnArea' on chunk '{chunkInstance.name}' is missing PolygonCollider2D. Cannot determine spawn bounds.", chunkInstance);
+            Debug.LogWarning($"'ObstacleSpawnArea' on chunk '{chunkInstance.name}' is missing PolygonCollider2D.", chunkInstance);
             return;
         }
 
-        Bounds spawnBounds = spawnBoundsCollider.bounds; // Still use AABB for initial random range
-
+        Bounds spawnBounds = spawnBoundsCollider.bounds;
         int obstaclesSpawned = 0;
-        int maxAttempts = maxObstaclesPerChunk * 5; // Increase attempts for rejection sampling
+        int maxAttempts = maxObstaclesPerChunk * 5; // Allow more attempts for rejection sampling
+
         for (int attempt = 0; attempt < maxAttempts && obstaclesSpawned < maxObstaclesPerChunk; attempt++)
         {
-            // Select a random obstacle
             int obstacleIndex = Random.Range(0, obstaclePrefabs.Count);
             GameObject obstaclePrefab = obstaclePrefabs[obstacleIndex];
 
-            // Calculate random spawn point within the AABB
             float randomX = Random.Range(spawnBounds.min.x, spawnBounds.max.x);
             float randomY = Random.Range(spawnBounds.min.y, spawnBounds.max.y);
-            // Assuming obstacles are placed flat on the Z=0 plane relative to the chunk.
-            // If your ground has varying height, this Z calculation might need adjustment.
             Vector3 potentialSpawnPoint = new Vector3(randomX, randomY, spawnBounds.center.z);
 
-            // --- Check if the point is INSIDE the PolygonCollider2D ---
+            // Check if the point is INSIDE the PolygonCollider2D
             if (!spawnBoundsCollider.OverlapPoint(potentialSpawnPoint))
             {
-                // Point is outside the polygon, try again
-                continue;
+                continue; // Outside polygon, try again
             }
 
-            // --- Optional: Overlap Check (to prevent obstacles spawning on top of each other) ---
-            // Consider the size of the obstacle prefab when checking radius
-            // float checkRadius = obstaclePrefab.GetComponent<Collider2D>()?.bounds.extents.magnitude ?? 1.0f;
-            // Collider2D overlap = Physics2D.OverlapCircle(potentialSpawnPoint, checkRadius); // Add LayerMask if needed
-            // if (overlap != null && overlap.transform != spawnAreaTransform) // Ensure we don't overlap with the area itself
-            // {
-            //     // Debug.Log($"Obstacle spawn point {potentialSpawnPoint} overlapped with {overlap.name}. Skipping.");
-            //     continue; // Try another position
-            // }
-            // --- End Optional Overlap Check ---
+            // Optional: Overlap Check (to prevent stacking)
+            // ... (code removed for brevity) ...
 
-
-            // Instantiate the obstacle
-            Instantiate(obstaclePrefab, potentialSpawnPoint, Quaternion.identity, chunkInstance.transform); // Parent to the chunk
+            Instantiate(obstaclePrefab, potentialSpawnPoint, Quaternion.identity, chunkInstance.transform);
             obstaclesSpawned++;
-        }
-
-        if (obstaclesSpawned < maxObstaclesPerChunk)
-        {
-            // Optional: Log if we couldn't spawn the desired number after many attempts
-            // Debug.Log($"Could only spawn {obstaclesSpawned}/{maxObstaclesPerChunk} obstacles in {chunkInstance.name} after {maxAttempts} attempts.");
         }
     }
 
     private void SpawnBuildingsAndZonesOnChunk(GameObject roadChunkInstance)
     {
-        currentChunkBuildingPositionsX.Clear(); // Reset for this chunk
-
-        // --- Spawn Top Buildings ---
+        currentChunkBuildingPositionsX.Clear();
         SpawnBuildingsInArea(roadChunkInstance, "BuildingSpawnArea_Top", "Wall_Bottom", topBuildingPrefabs, true);
-
-        // --- Spawn Bottom Buildings ---
         SpawnBuildingsInArea(roadChunkInstance, "BuildingSpawnArea_Bottom", "Wall_Top", bottomBuildingPrefabs, false);
     }
 
-    private void SpawnBuildingsInArea(GameObject roadChunkInstance, string areaName, string wallToHugName, List<GameObject> buildingPrefabs, bool hugMinY) // hugMinY = true for Top (hug bottom wall), false for Bottom (hug top wall)
+    private void SpawnBuildingsInArea(GameObject roadChunkInstance, string areaName, string wallToHugName, List<GameObject> buildingPrefabs, bool hugMinY)
     {
         if (buildingPrefabs == null || buildingPrefabs.Count == 0) return;
 
@@ -318,106 +261,65 @@ public class LevelGenerator : MonoBehaviour
 
         Bounds areaBounds = areaCollider.bounds;
         int buildingsSpawnedInArea = 0;
-        int candidatesToFind = 3; // Restore finding multiple candidates
-        int maxPlacementAttemptsPerCandidate = 10; // Attempts to find *one* valid point
+        int candidatesToFind = 3;
+        int maxPlacementAttemptsPerCandidate = 10;
         int maxBuildingAttempts = maxBuildingsPerArea * 5; 
 
         for (int buildingAttempt = 0; buildingAttempt < maxBuildingAttempts && buildingsSpawnedInArea < maxBuildingsPerArea; buildingAttempt++)
         {
-            // 1. Select Building Prefab
             GameObject buildingPrefab = buildingPrefabs[Random.Range(0, buildingPrefabs.Count)];
-            List<Vector3> validCandidates = new List<Vector3>(); // Restore candidate list
+            List<Vector3> validCandidates = new List<Vector3>();
 
-            // 2. Find Multiple Valid Candidate Positions using Rejection Sampling
+            // Find Multiple Valid Candidate Positions using Rejection Sampling
             for (int candidateNum = 0; candidateNum < candidatesToFind; candidateNum++)
             {
                 for (int placementAttempt = 0; placementAttempt < maxPlacementAttemptsPerCandidate; placementAttempt++)
                 {
-                    // Generate random point within the AABB
                     float randomX = Random.Range(areaBounds.min.x, areaBounds.max.x);
                     float randomY = Random.Range(areaBounds.min.y, areaBounds.max.y);
                     Vector3 testPos = new Vector3(randomX, randomY, areaBounds.center.z);
 
-                    // Check if the point is inside the actual collider shape
                     if (areaCollider.OverlapPoint(testPos))
                     {
-                        validCandidates.Add(testPos); // Add valid point to list
-                        break; // Found a candidate, move to the next candidateNum
+                        validCandidates.Add(testPos);
+                        break; // Found one
                     }
                 }
             }
 
-            if (validCandidates.Count == 0)
-            {
-                // Debug.Log($"Could not find any valid placement points in {areaName} after multiple attempts.");
-                continue; 
-            }
+            if (validCandidates.Count == 0) continue; 
 
-            // 3. Select the Best Candidate (Closest to Road Edge - REVISED LOGIC)
+            // Select the Best Candidate (Closest to Road Edge)
             Vector3 bestPos = validCandidates[0];
-
-            if (hugMinY) // Top Area: Prefer LOWEST Y (closest to road below)
+            if (hugMinY) // Top Area: Prefer LOWEST Y
             {
-                for (int i = 1; i < validCandidates.Count; i++)
-                {
-                    if (validCandidates[i].y < bestPos.y)
-                    {
-                        bestPos = validCandidates[i];
-                    }
-                }
+                for (int i = 1; i < validCandidates.Count; i++) { if (validCandidates[i].y < bestPos.y) bestPos = validCandidates[i]; }
             }
-            else // Bottom Area: Prefer HIGHEST Y (closest to road above)
+            else // Bottom Area: Prefer HIGHEST Y
             {
-                for (int i = 1; i < validCandidates.Count; i++)
-                {
-                    if (validCandidates[i].y > bestPos.y)
-                    {
-                        bestPos = validCandidates[i];
-                    }
-                }
+                for (int i = 1; i < validCandidates.Count; i++) { if (validCandidates[i].y > bestPos.y) bestPos = validCandidates[i]; }
             }
 
-            // --- Optional: Offset based on building size/pivot ---
-            // If buildings still visually clip outside, you might need an offset.
-            // This depends heavily on your building prefab pivot points.
-            // Example: If pivot is centered, offset by half height towards center of area.
-            // Collider2D buildingCollider = buildingPrefab.GetComponent<Collider2D>();
-            // float yOffset = (buildingCollider?.bounds.size.y ?? 1f) * 0.5f;
-            // bestPos.y += hugMinY ? -yOffset : yOffset; // Push away from the edge slightly
-            // ---
+            // Optional: Offset based on building size/pivot
+            // ... (code removed for brevity) ...
 
-            // 4. Check Spacing 
+            // Check Spacing 
             bool tooClose = false;
             foreach (float existingX in currentChunkBuildingPositionsX)
             {
-                if (Mathf.Abs(bestPos.x - existingX) < minBuildingSpacing)
-                {
-                    tooClose = true;
-                    break;
-                }
+                if (Mathf.Abs(bestPos.x - existingX) < minBuildingSpacing) { tooClose = true; break; }
             }
-            if (tooClose)
-            {
-                // Debug.Log($"Best building spawn pos {bestPos} too close to existing X. Skipping.");
-                continue; 
-            }
+            if (tooClose) continue; 
 
-            // --- Optional Overlap Check ---
-            // Vector2 buildingSize = buildingPrefab.GetComponent<Collider2D>()?.bounds.size ?? Vector2.one;
-            // Collider2D overlap = Physics2D.OverlapBox(bestPos, buildingSize * 0.9f, 0f); // Check slightly smaller box
-            // if (overlap != null && overlap.transform.IsChildOf(roadChunkInstance.transform) && overlap != areaCollider)
-            // {
-            //     // Debug.Log($"Building spawn {bestPos} overlapped with {overlap.name}. Skipping.");
-            //     continue;
-            // }
-            // ---
+            // Optional Overlap Check
+            // ... (code removed for brevity) ...
 
-            // 5. Instantiate at the chosen best position
+            // Instantiate
             GameObject buildingInstance = Instantiate(buildingPrefab, bestPos, Quaternion.identity, roadChunkInstance.transform);
             currentChunkBuildingPositionsX.Add(bestPos.x); 
             buildingsSpawnedInArea++;
 
-            // 6. Try Activate Delivery Zone
+            // Try Activate Delivery Zone
             TryActivateDeliveryZone(buildingInstance);
         }
     }
@@ -425,95 +327,65 @@ public class LevelGenerator : MonoBehaviour
 
     private void TryActivateDeliveryZone(GameObject buildingInstance)
     {
-        if (zonesInCurrentGroup >= maxZonesPerGroup)
-        {
-            // Debug.Log("Max zones for group reached.");
-            return; // Group limit hit
-        }
+        if (zonesInCurrentGroup >= maxZonesPerGroup) return; // Group limit hit
 
-        // --- Check Inventory for Available Colors ---
         InventoryManager invManager = InventoryManager.Instance;
-        if (invManager == null)
-        {
+        if (invManager == null) {
             Debug.LogWarning("TryActivateDeliveryZone: InventoryManager not found!", buildingInstance);
-            return; // Cannot determine required color
+            return;
         }
 
+        // Get unique colors currently in inventory
         List<InventorySlotData> currentInventory = invManager.GetInventorySlots();
-        List<Color> availableColors = new List<Color>();
-        Debug.Log($"[TryActivateDeliveryZone] Checking inventory. Slot count: {currentInventory.Count}"); // Log: Inventory size
-        foreach (InventorySlotData slotData in currentInventory)
-        {
-            if (slotData != null && slotData.itemData != null)
-            {
-                Color itemColor = slotData.itemData.itemColor;
-                Debug.Log($"[TryActivateDeliveryZone] Found item: {slotData.itemData.itemName}, Color: {itemColor}"); // Log: Item and color
-                if (!availableColors.Contains(itemColor))
-                {
-                    availableColors.Add(itemColor);
-                    Debug.Log($"[TryActivateDeliveryZone] Added unique color: {itemColor}"); // Log: Adding unique color
-                }
-            }
+        List<Color> availableColors = currentInventory
+            .Where(slotData => slotData?.itemData != null)
+            .Select(slotData => slotData.itemData.itemColor)
+            .Distinct()
+            .ToList();
+
+        if (availableColors.Count == 0) {
+            Debug.Log("[TryActivateDeliveryZone] No unique item colors in inventory. Cannot activate zone.");
+            return;
         }
 
-        Debug.Log($"[TryActivateDeliveryZone] Total unique available colors: {availableColors.Count}"); // Log: Final unique color count
-
-        if (availableColors.Count == 0)
-        {
-            Debug.Log("[TryActivateDeliveryZone] No unique item colors found in inventory. Cannot activate zone.");
-            return; // Cannot activate zone if no items/colors are available
-        }
-
-        // --- Activation Logic ---
+        // Activation Logic
         if (Random.value <= deliveryZoneActivationChance)
         {
-            // Find the placeholder child
-            Transform zonePlaceholder = buildingInstance.transform.Find("DeliveryZone_Placeholder"); // Use exact name
+            Transform zonePlaceholder = buildingInstance.transform.Find("DeliveryZone_Placeholder");
             if (zonePlaceholder != null)
             {
                 DeliveryZone zoneScript = zonePlaceholder.GetComponent<DeliveryZone>();
                 if (zoneScript == null)
                 {
-                    // Add the component if it's missing (should be on the prefab ideally)
                     Debug.LogWarning($"DeliveryZone component missing on placeholder for {buildingInstance.name}. Adding it.", buildingInstance);
                     zoneScript = zonePlaceholder.gameObject.AddComponent<DeliveryZone>();
-                    // Potentially add/configure SpriteRenderer reference here if needed
                 }
 
-                // Pick a random color from the ones available in the inventory
                 Color chosenColor = availableColors[Random.Range(0, availableColors.Count)];
-                Debug.Log($"[TryActivateDeliveryZone] Randomly chosen color: {chosenColor}"); // Log: Chosen color
-
-                // Activate the zone with the chosen color
                 zoneScript.ActivateZone(chosenColor);
-
                 zonesInCurrentGroup++;
-                Debug.Log($"[TryActivateDeliveryZone] Activated Delivery Zone on {buildingInstance.name} with color {chosenColor}. Zones in group: {zonesInCurrentGroup}/{maxZonesPerGroup}");
+                Debug.Log($"[TryActivateDeliveryZone] Activated Zone on {buildingInstance.name} with color {chosenColor}. Zones in group: {zonesInCurrentGroup}/{maxZonesPerGroup}");
             }
             else
             {
-                Debug.LogWarning($"Building {buildingInstance.name} spawned, but 'DeliveryZone_Placeholder' child not found!", buildingInstance);
+                Debug.LogWarning($"Building {buildingInstance.name} spawned, but 'DeliveryZone_Placeholder' not found!", buildingInstance);
             }
         }
         else
         {
-            Debug.Log("[TryActivateDeliveryZone] Activation chance failed."); // Log: Activation chance failed
+            Debug.Log("[TryActivateDeliveryZone] Activation chance failed.");
         }
     }
 
-    // Helper function to find the EndPosition transform of an INSTANCE
+    // Helper to find EndPosition transform
     private Transform FindEndPosition(GameObject chunkInstance)
     {
-        if (chunkInstance == null) return null;
-        // Use Find which searches children recursively by default.
-        return chunkInstance.transform.Find("EndPosition");
+        return chunkInstance?.transform.Find("EndPosition");
     }
 
-    // Helper function to find the StartPosition transform within a PREFAB
+    // Helper to find StartPosition transform
     private Transform FindStartPosition(GameObject prefab)
     {
-        if (prefab == null) return null;
-        // Use Find which searches children recursively by default.
-        return prefab.transform.Find("StartPosition");
+        return prefab?.transform.Find("StartPosition");
     }
 }

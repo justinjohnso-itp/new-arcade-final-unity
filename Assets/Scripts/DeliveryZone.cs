@@ -6,14 +6,13 @@ using UnityEngine;
 /// </summary>
 public class DeliveryZone : MonoBehaviour
 {
-    [Tooltip("Visual element to change color (e.g., SpriteRenderer, UI Image)")]
+    [Tooltip("Visual element to change color (e.g., SpriteRenderer)")]
     [SerializeField] private SpriteRenderer zoneVisual;
-    // Or use: [SerializeField] private UnityEngine.UI.Image zoneUIImage;
 
-    public Color RequiredColor { get; private set; } = Color.clear; // Default to clear/inactive
+    public Color RequiredColor { get; private set; } = Color.clear; // Default to inactive
 
     /// <summary>
-    /// Activates the zone and sets its required color and visual appearance.
+    /// Activates the zone, setting its required color and visual appearance.
     /// </summary>
     public void ActivateZone(Color requiredColor)
     {
@@ -24,16 +23,11 @@ public class DeliveryZone : MonoBehaviour
         {
             zoneVisual.color = RequiredColor;
         }
-        // else if (zoneUIImage != null)
-        // {
-        //     zoneUIImage.color = RequiredColor;
-        // }
         else
         {
-            Debug.LogWarning("DeliveryZone: No visual component assigned to change color.", this);
+            Debug.LogWarning("DeliveryZone: No visual component assigned.", this);
         }
-        // Consider adding a Collider2D here if it's not already on the placeholder
-        // Ensure it's set as a Trigger
+        // Ensure Collider2D is present and set as Trigger on the placeholder prefab.
     }
 
     /// <summary>
@@ -45,10 +39,9 @@ public class DeliveryZone : MonoBehaviour
         gameObject.SetActive(false);
     }
 
-    // Optional: Reset on disable
-    void OnDisable()
-    {
-        // Ensure color is reset if deactivated externally
-        // RequiredColor = Color.clear; 
-    }
+    // Optional: Reset state if deactivated externally
+    // void OnDisable()
+    // {
+    //     RequiredColor = Color.clear; 
+    // }
 }

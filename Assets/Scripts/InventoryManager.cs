@@ -6,7 +6,7 @@ using System.Collections; // Required for Coroutines
 /// <summary>
 /// Represents a slot in the inventory data, holding item data and quantity.
 /// </summary>
-[System.Serializable] // Make it visible in the Inspector if needed (though likely not directly edited)
+[System.Serializable]
 public class InventorySlotData
 {
     public InventoryItemData itemData;
@@ -18,7 +18,7 @@ public class InventorySlotData
         quantity = amount;
     }
 
-    // Helper to add quantity to this slot
+    // Helper to add quantity
     public void AddQuantity(int amount)
     {
         quantity += amount;
@@ -26,8 +26,8 @@ public class InventorySlotData
 }
 
 /// <summary>
-/// Manages the player's inventory data (items and quantities).
-/// Implements a simple Singleton pattern for easy access.
+/// Manages the player's inventory data.
+/// Implements a Singleton pattern.
 /// </summary>
 public class InventoryManager : MonoBehaviour
 {
@@ -43,48 +43,41 @@ public class InventoryManager : MonoBehaviour
         else
         {
             Instance = this;
-            // Optional: Keep the InventoryManager persistent across scenes
-            // DontDestroyOnLoad(gameObject);
+            // Optional: DontDestroyOnLoad(gameObject);
         }
     }
     // --- End Singleton Pattern ---
 
     [Header("Inventory Settings")]
-    [Tooltip("Maximum number of distinct item slots allowed in the inventory.")]
-    [SerializeField] private int maxInventorySlots = 4; // Added max slots field
+    [Tooltip("Maximum number of distinct item slots allowed.")]
+    [SerializeField] private int maxInventorySlots = 4;
     [Tooltip("All possible item types that can be randomly added.")]
     [SerializeField] private List<InventoryItemData> availableItemTypes;
-    [Tooltip("Delay between random item additions (in seconds). Set <= 0 to disable.")]
+    [Tooltip("Delay between random item additions (seconds). Set <= 0 to disable.")]
     [SerializeField] private float randomAddDelay = 1.0f;
 
-    // The actual inventory data - using List for easy add/remove/rotate
     private List<InventorySlotData> inventorySlots = new List<InventorySlotData>();
 
-    // Optional: Event to notify UI when inventory changes
+    // Event to notify UI when inventory changes
     public System.Action OnInventoryChanged;
 
-    // Reference to score manager (assign in Inspector or find)
-    [Header("Dependencies")] // Added header for clarity
+    [Header("Dependencies")]
     [Tooltip("Reference to the ScoreManager in the scene.")]
     [SerializeField] private ScoreManager scoreManager;
 
     void Start()
     {
-        // Find ScoreManager if not assigned in Inspector
+        // Find ScoreManager if not assigned
         if (scoreManager == null)
         {
-            // Use FindFirstObjectByType for newer Unity versions
             scoreManager = FindFirstObjectByType<ScoreManager>();
-            // Fallback for older versions (or keep if preferred)
-            // scoreManager = FindObjectOfType<ScoreManager>();
-
             if (scoreManager == null)
             {
-                Debug.LogWarning("InventoryManager: ScoreManager not found in scene and not assigned! Scoring will not work.", this);
+                Debug.LogWarning("InventoryManager: ScoreManager not found! Scoring will not work.", this);
             }
         }
 
-        // Start the random item adding coroutine if delay is positive
+        // Start random item adding if configured
         if (randomAddDelay > 0 && availableItemTypes != null && availableItemTypes.Count > 0)
         {
             StartCoroutine(RandomlyAddItemRoutine());
@@ -102,26 +95,24 @@ public class InventoryManager : MonoBehaviour
             {
                 InventoryItemData itemToAdd = availableItemTypes[Random.Range(0, availableItemTypes.Count)];
                 AddItem(itemToAdd, 1);
-                // Debug.Log($"Added random item: {itemToAdd.itemName}");
             }
         }
     }
 
 
     /// <summary>
-    /// Attempts to add an item to the inventory. Finds existing stacks or adds to a new slot, respecting max slot limit.
+    /// Attempts to add an item. Stacks if possible, otherwise adds to a new slot if space allows.
     /// </summary>
     public bool AddItem(InventoryItemData itemToAdd, int quantityToAdd = 1)
     {
         if (itemToAdd == null || quantityToAdd <= 0) return false;
 
         bool addedSuccessfully = false;
-        int originalQuantity = quantityToAdd; // Keep track for logging
+        int originalQuantity = quantityToAdd;
 
-        // --- Stacking Logic --- 
+        // --- Stacking --- 
         if (itemToAdd.canStack)
         {
-            // Try to find existing stacks with space
             for (int i = 0; i < inventorySlots.Count; i++)
             {
                 if (inventorySlots[i] != null && inventorySlots[i].itemData == itemToAdd && inventorySlots[i].quantity < itemToAdd.maxStackSize)
@@ -138,41 +129,35 @@ public class InventoryManager : MonoBehaviour
             }
         }
 
-        // --- Add to New Slot Logic --- 
-        // If there's still quantity left, try to add new slots IF space allows
+        // --- Add to New Slot --- 
         while (quantityToAdd > 0)
         {
-            // *** Check if inventory is full BEFORE adding a new slot ***
             if (inventorySlots.Count >= maxInventorySlots)
             {
-                Debug.LogWarning($"Inventory full ({inventorySlots.Count}/{maxInventorySlots} slots)! Could not add new slot for {itemToAdd.itemName}.");
-                break; // Exit loop if no more slots can be added
+                Debug.LogWarning($"Inventory full ({inventorySlots.Count}/{maxInventorySlots})! Could not add new slot for {itemToAdd.itemName}.");
+                break; // No more slots
             }
 
             int amountToAdd = itemToAdd.canStack ? Mathf.Min(quantityToAdd, itemToAdd.maxStackSize) : 1;
-            // Add to the end of the list
             inventorySlots.Add(new InventorySlotData(itemToAdd, amountToAdd)); 
             quantityToAdd -= amountToAdd;
             addedSuccessfully = true;
         }
 
-
         if (addedSuccessfully)
         {
             OnInventoryChanged?.Invoke();
         }
-        // Log if partially added due to slot limit
         else if (quantityToAdd < originalQuantity && inventorySlots.Count >= maxInventorySlots)
         { 
              Debug.LogWarning($"Inventory full! Could only add {originalQuantity - quantityToAdd} of {itemToAdd.itemName} to existing stacks.");
         }
 
-
-        return addedSuccessfully; // Returns true if *any* quantity was added
+        return addedSuccessfully; // True if *any* quantity was added
     }
 
     /// <summary>
-    /// Attempts to remove an item from the inventory. Prioritizes removing from later slots first.
+    /// Attempts to remove an item. Prioritizes removing from later slots first.
     /// </summary>
     public bool RemoveItem(InventoryItemData itemToRemove, int quantityToRemove = 1)
     {
@@ -181,7 +166,7 @@ public class InventoryManager : MonoBehaviour
         int quantityStillNeeded = quantityToRemove;
         bool removedAny = false;
 
-        // Iterate backwards to safely remove/clear slots and prioritize newer items
+        // Iterate backwards to safely remove slots
         for (int i = inventorySlots.Count - 1; i >= 0; i--)
         {
             if (inventorySlots[i] != null && inventorySlots[i].itemData == itemToRemove)
@@ -191,17 +176,16 @@ public class InventoryManager : MonoBehaviour
                 quantityStillNeeded -= amountToRemoveFromSlot;
                 removedAny = true;
 
-                // If stack becomes empty, remove the slot entirely
                 if (inventorySlots[i].quantity <= 0)
                 {
-                    inventorySlots.RemoveAt(i); // Remove from list
+                    inventorySlots.RemoveAt(i);
                 }
 
                 if (quantityStillNeeded <= 0) break; // Removed enough
             }
         }
 
-        if (removedAny && quantityStillNeeded <= 0) // Fully removed requested amount
+        if (removedAny && quantityStillNeeded <= 0) // Fully removed
         {
             OnInventoryChanged?.Invoke();
             return true;
@@ -212,7 +196,7 @@ public class InventoryManager : MonoBehaviour
              Debug.LogWarning($"Could only remove {quantityToRemove - quantityStillNeeded} of {itemToRemove.itemName}. Not enough in inventory.");
              return false; 
         }
-        else // Item not found
+        else // Not found
         {
             Debug.LogWarning($"Item {itemToRemove.itemName} not found in inventory.");
             return false;
@@ -220,67 +204,61 @@ public class InventoryManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Removes the oldest item (at index 0) and checks if its color matches the zone color.
-    /// Adds points via ScoreManager if it matches, or adds a smaller bonus if it mismatches.
+    /// Removes the oldest item and scores based on color match with the zone.
     /// </summary>
-    /// <param name="zoneColor">The required color of the delivery zone.</param>
     public void RemoveOldestItemAndScore(Color zoneColor)
     {
         if (inventorySlots.Count == 0 || inventorySlots[0] == null)
         {
             Debug.Log("Inventory empty, cannot remove oldest item.");
-            return; // Nothing to remove
+            return;
         }
 
         InventorySlotData oldestSlot = inventorySlots[0];
-        InventoryItemData removedItemData = oldestSlot.itemData; // Store data before removing
+        InventoryItemData removedItemData = oldestSlot.itemData;
 
-        // Remove the item/slot at index 0
         inventorySlots.RemoveAt(0);
 
         Debug.Log($"Removed oldest item: {removedItemData.itemName}");
 
-        // Check color match for scoring
+        // Score based on color match
         if (removedItemData.itemColor == zoneColor)
         {
             Debug.Log($"Color match! Zone: {zoneColor}, Item: {removedItemData.itemColor}. +100 points.");
-            // Add points using ScoreManager
-            if (scoreManager != null) // Check if scoreManager exists
+            if (scoreManager != null)
             {
                 scoreManager.AddScore(100); // Correct delivery score
             }
             else
             {
-                Debug.LogWarning("ScoreManager reference missing in InventoryManager, cannot add score.");
+                Debug.LogWarning("ScoreManager missing, cannot add score.");
             }
         }
         else
         {
             Debug.Log($"Color mismatch. Zone: {zoneColor}, Item: {removedItemData.itemColor}. +10 points.");
-            // Add bonus points for wrong delivery
             if (scoreManager != null)
             {
                 scoreManager.AddScore(10); // Wrong delivery bonus
             }
             else
             {
-                Debug.LogWarning("ScoreManager reference missing in InventoryManager, cannot add score.");
+                Debug.LogWarning("ScoreManager missing, cannot add score.");
             }
         }
 
-        // Notify UI
         OnInventoryChanged?.Invoke();
     }
 
 
     /// <summary>
-    /// Randomly shuffles the order of items currently in the inventory.
+    /// Randomly shuffles the order of items.
     /// </summary>
     public void ShuffleInventory()
     {
-        if (inventorySlots.Count <= 1) return; // No need to shuffle empty or single-item list
+        if (inventorySlots.Count <= 1) return;
 
-        // Simple Fisher-Yates shuffle
+        // Fisher-Yates shuffle
         System.Random rng = new System.Random();
         int n = inventorySlots.Count;
         while (n > 1)
@@ -297,26 +275,24 @@ public class InventoryManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Rotates the inventory items up or down.
+    /// Rotates the inventory items.
     /// </summary>
-    /// <param name="forward">True moves item 0 to end, False moves end item to 0.</param>
+    /// <param name="forward">True moves last item to first, False moves first item to last.</param>
     public void RotateInventory(bool forward)
     {
-        if (inventorySlots.Count <= 1) return; // No need to rotate
+        if (inventorySlots.Count <= 1) return;
 
-        if (forward) // W key / Up Arrow (Move last to first)
+        if (forward) // Move last to first
         {
             InventorySlotData lastItem = inventorySlots[inventorySlots.Count - 1];
             inventorySlots.RemoveAt(inventorySlots.Count - 1);
             inventorySlots.Insert(0, lastItem);
-            // Debug.Log("Rotated inventory forward (W/Up)");
         }
-        else // S key / Down Arrow (Move first to last)
+        else // Move first to last
         {
             InventorySlotData firstItem = inventorySlots[0];
             inventorySlots.RemoveAt(0);
             inventorySlots.Add(firstItem);
-            // Debug.Log("Rotated inventory backward (S/Down)");
         }
 
         OnInventoryChanged?.Invoke();
@@ -324,7 +300,7 @@ public class InventoryManager : MonoBehaviour
 
 
     /// <summary>
-    /// Gets the current state of the inventory slots.
+    /// Gets the current inventory slots.
     /// </summary>
     public List<InventorySlotData> GetInventorySlots()
     {
@@ -332,7 +308,7 @@ public class InventoryManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Gets the number of items/slots currently in the inventory.
+    /// Gets the current number of occupied slots.
     /// </summary>
     public int GetCurrentInventoryCount()
     {

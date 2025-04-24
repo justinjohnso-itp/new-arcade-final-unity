@@ -4,21 +4,20 @@ using System.Collections.Generic;
 public class InventoryUI : MonoBehaviour
 {
     [Header("UI References")]
-    [Tooltip("The parent object where InventorySlot prefabs will be instantiated.")]
+    [Tooltip("Parent object for InventorySlot prefabs.")]
     [SerializeField] private Transform slotsParent;
-    [Tooltip("The prefab for a single inventory slot UI element.")]
+    [Tooltip("Prefab for a single inventory slot UI element.")]
     [SerializeField] private GameObject inventorySlotPrefab;
 
     [Header("Highlighting")]
     [SerializeField] private Color bottomSlotHighlightColor = Color.blue; // Color for the oldest item slot
 
     private InventoryManager inventoryManager;
-    // Keep the list to potentially manage instantiated slots if needed later, but primary update is now instantiation
     private List<InventorySlot> inventorySlotsUI = new List<InventorySlot>();
 
     void Start()
     {
-        inventoryManager = InventoryManager.Instance; // Get singleton instance
+        inventoryManager = InventoryManager.Instance;
         if (inventoryManager == null)
         {
             Debug.LogError("InventoryUI: InventoryManager instance not found!");
@@ -27,30 +26,23 @@ public class InventoryUI : MonoBehaviour
         }
         if (slotsParent == null)
         {
-            Debug.LogError("InventoryUI: Slots Parent transform is not assigned!");
+            Debug.LogError("InventoryUI: Slots Parent transform not assigned!");
             this.enabled = false;
             return;
         }
         if (inventorySlotPrefab == null)
         {
-            Debug.LogError("InventoryUI: Inventory Slot Prefab is not assigned!");
+            Debug.LogError("InventoryUI: Inventory Slot Prefab not assigned!");
             this.enabled = false;
             return;
         }
 
-        // Remove initialization from children
-        // InitializeSlotsFromChildren(); 
-
-        // --- Subscribe to Inventory Changes --- 
         inventoryManager.OnInventoryChanged += UpdateUI;
-
-        // --- Initial UI Update --- 
-        UpdateUI(); // Update UI with initial inventory state (will likely be empty)
+        UpdateUI(); // Initial update
     }
 
     void OnDestroy()
     {
-        // --- Unsubscribe from events --- 
         if (inventoryManager != null)
         {
             inventoryManager.OnInventoryChanged -= UpdateUI;
@@ -58,7 +50,7 @@ public class InventoryUI : MonoBehaviour
     }
 
     /// <summary>
-    /// Clears existing slots and instantiates new ones based on the InventoryManager's data.
+    /// Clears existing slots and instantiates new ones based on InventoryManager data.
     /// </summary>
     private void UpdateUI()
     {
@@ -69,41 +61,38 @@ public class InventoryUI : MonoBehaviour
         {
             Destroy(child.gameObject);
         }
-        inventorySlotsUI.Clear(); // Clear the list of references
+        inventorySlotsUI.Clear();
 
         // 2. Get current inventory data
         List<InventorySlotData> inventoryData = inventoryManager.GetInventorySlots();
 
-        // 3. Instantiate new UI slots based on data
+        // 3. Instantiate new UI slots
         for (int i = 0; i < inventoryData.Count; i++)
         {
             InventorySlotData slotData = inventoryData[i];
-            if (slotData != null && slotData.itemData != null) // Ensure data is valid
+            if (slotData?.itemData != null) // Ensure data is valid
             {
                 GameObject slotGO = Instantiate(inventorySlotPrefab, slotsParent);
                 InventorySlot slotUI = slotGO.GetComponent<InventorySlot>();
 
                 if (slotUI != null)
                 {
-                    inventorySlotsUI.Add(slotUI); // Add reference to our list
+                    inventorySlotsUI.Add(slotUI);
                     slotUI.UpdateSlot(slotData.itemData, slotData.quantity);
 
-                    // --- Highlight Bottom Slot (Index 0) --- 
+                    // Highlight Bottom Slot (Index 0)
                     if (i == 0)
                     {
                         slotUI.SetBackgroundColor(bottomSlotHighlightColor);
                     }
-                    // --- End Highlight ---
                 }
                 else
                 {
-                    Debug.LogError("InventoryUI: Instantiated slot prefab is missing InventorySlot component!", slotGO);
-                    Destroy(slotGO); // Clean up invalid instance
+                    Debug.LogError("InventoryUI: Instantiated slot prefab missing InventorySlot component!", slotGO);
+                    Destroy(slotGO);
                 }
             }
-            // If slotData is null or itemData is null, we simply don't instantiate a slot for it.
         }
-        
-        // The Grid Layout Group component on slotsParent will handle positioning.
+        // Grid Layout Group handles positioning.
     }
 }

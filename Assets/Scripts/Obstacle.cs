@@ -16,16 +16,15 @@ public class Obstacle : MonoBehaviour
         rb = GetComponent<Rigidbody2D>();
         col = GetComponent<Collider2D>();
 
-        // Ensure Rigidbody2D exists, add if necessary (though it's better to add it in the prefab)
         if (rb == null)
         {
             rb = gameObject.AddComponent<Rigidbody2D>();
-            rb.gravityScale = 1; // Adjust gravity as needed, maybe less for a floaty effect
+            rb.gravityScale = 1; // Adjust gravity as needed
             Debug.LogWarning($"Obstacle {name} was missing Rigidbody2D. Added one.", this);
         }
     }
 
-    // This method will be called by the PlayerController upon collision
+    // Called by the PlayerController upon collision
     public void HandleHit(Vector2 hitDirection)
     {
         if (hit) return; // Prevent multiple hits
@@ -33,20 +32,17 @@ public class Obstacle : MonoBehaviour
 
         Debug.Log($"{name} hit!");
 
-        // Disable collider immediately to prevent further collisions
         if (col != null)
         {
             col.enabled = false;
         }
 
-        // Apply physics effect
         if (rb != null)
         {
-            // Make it dynamic if it wasn't already (e.g., if it was kinematic)
-            rb.bodyType = RigidbodyType2D.Dynamic; // Use bodyType instead of isKinematic
-            rb.gravityScale = 1; // Ensure gravity affects it now
+            rb.bodyType = RigidbodyType2D.Dynamic;
+            rb.gravityScale = 1; // Ensure gravity affects it
 
-            // Apply force in the direction away from the hit
+            // Apply force away from the hit
             Vector2 forceDirection = (transform.position - (Vector3)hitDirection).normalized;
             rb.AddForce(forceDirection * flyAwayForce, ForceMode2D.Impulse);
 
@@ -54,7 +50,6 @@ public class Obstacle : MonoBehaviour
             rb.AddTorque((Random.value > 0.5f ? 1f : -1f) * flyAwayTorque, ForceMode2D.Impulse);
         }
 
-        // Start the destruction timer
         StartCoroutine(DestroyAfterDelay());
     }
 

@@ -3,7 +3,7 @@ using System;
 
 /// <summary>
 /// Manages the player's score and provides events for UI updates.
-/// Implements a simple Singleton pattern.
+/// Implements a Singleton pattern.
 /// </summary>
 public class ScoreManager : MonoBehaviour
 {
@@ -19,8 +19,7 @@ public class ScoreManager : MonoBehaviour
         else
         {
             Instance = this;
-            // Optional: Keep persistent across scenes if needed
-            // DontDestroyOnLoad(gameObject);
+            // Optional: DontDestroyOnLoad(gameObject);
         }
     }
     // -- End Singleton Pattern --
@@ -28,13 +27,11 @@ public class ScoreManager : MonoBehaviour
     [Header("Score Settings")]
     [SerializeField] private int currentScore = 0;
 
-    // Event triggered when the score changes, passing the new score
+    // Event triggered when the score changes
     public event Action<int> OnScoreChanged;
 
     void Start()
     {
-        // Initialize score (optional, could start at 0)
-        // currentScore = 0; 
         // Trigger initial event for UI setup
         OnScoreChanged?.Invoke(currentScore);
     }
@@ -42,12 +39,10 @@ public class ScoreManager : MonoBehaviour
     /// <summary>
     /// Adds the specified amount to the current score.
     /// </summary>
-    /// <param name="amount">The amount to add (can be negative).</param>
     public void AddScore(int amount)
     {
         currentScore += amount;
         Debug.Log($"Score changed by {amount}. New score: {currentScore}");
-        // Trigger the event to notify listeners (like the UI)
         OnScoreChanged?.Invoke(currentScore);
     }
 
@@ -59,7 +54,9 @@ public class ScoreManager : MonoBehaviour
         return currentScore;
     }
 
-    // Optional: Method to reset score
+    /// <summary>
+    /// Resets the score to zero.
+    /// </summary>
     public void ResetScore()
     {
         currentScore = 0;

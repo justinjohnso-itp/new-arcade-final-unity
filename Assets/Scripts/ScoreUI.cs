@@ -14,14 +14,13 @@ public class ScoreUI : MonoBehaviour
         scoreText = GetComponent<TextMeshProUGUI>();
         if (scoreText == null)
         {
-            Debug.LogError("ScoreUI: TextMeshProUGUI component not found on this GameObject!", this);
+            Debug.LogError("ScoreUI: TextMeshProUGUI component not found!", this);
             this.enabled = false;
         }
     }
 
     void Start()
     {
-        // Subscribe to the score change event
         if (ScoreManager.Instance != null)
         {
             ScoreManager.Instance.OnScoreChanged += UpdateScoreText;
@@ -31,14 +30,13 @@ public class ScoreUI : MonoBehaviour
         else
         {
             Debug.LogError("ScoreUI: ScoreManager instance not found!", this);
-            // Optionally display an error state on the UI
             scoreText.text = "Score Error";
         }
     }
 
     void OnDestroy()
     {
-        // Unsubscribe to prevent memory leaks when this object is destroyed
+        // Unsubscribe to prevent memory leaks
         if (ScoreManager.Instance != null)
         {
             ScoreManager.Instance.OnScoreChanged -= UpdateScoreText;
@@ -46,14 +44,12 @@ public class ScoreUI : MonoBehaviour
     }
 
     /// <summary>
-    /// Callback function to update the text when the score changes.
+    /// Updates the score text display.
     /// </summary>
-    /// <param name="newScore">The new score value.</param>
     private void UpdateScoreText(int newScore)
     {
         if (scoreText != null)
         {
-            // Format the score text (e.g., "Score: 100")
             scoreText.text = $"Score: {newScore}";
         }
     }

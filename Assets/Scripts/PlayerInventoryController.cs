@@ -57,7 +57,7 @@ public class PlayerInventoryController : MonoBehaviour
             {
                 bool rotateForward = verticalInput > 0; // W or Up rotates forward (last to first)
                 inventoryManager.RotateInventory(rotateForward);
-                rotationInputCooldown = true; // Start cooldown
+                rotationInputCooldown = true;
             }
         }
         else

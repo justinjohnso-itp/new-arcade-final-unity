@@ -8,17 +8,14 @@ public class InventorySlot : MonoBehaviour
     [SerializeField] private Image iconImage;
     [SerializeField] private TextMeshProUGUI quantityText;
     [SerializeField] private Button slotButton; // Optional: for interaction
-    [SerializeField] private Image backgroundPanel; // Added background reference
+    [SerializeField] private Image backgroundPanel; // Reference to background image
 
     private InventoryItemData currentItemData;
     private int currentQuantity;
-
-    // Store default background color
     private Color defaultBackgroundColor;
 
     void Awake()
     {
-        // Store the default background color on awake
         if (backgroundPanel != null)
         {
             defaultBackgroundColor = backgroundPanel.color;
@@ -28,25 +25,12 @@ public class InventorySlot : MonoBehaviour
             defaultBackgroundColor = Color.white; // Fallback
         }
 
-        // Ensure quantity text is hidden initially if empty
-        if (quantityText != null)
-        {
-            quantityText.gameObject.SetActive(false);
-        }
-        // Ensure icon is cleared initially
-        if (iconImage != null)
-        {
-            iconImage.sprite = null;
-            iconImage.enabled = false;
-        }
-        // Optional: Add listener for button clicks
-        // slotButton?.onClick.AddListener(OnSlotClicked);
-
-        ClearSlot(); // Ensure clean state on awake
+        // Ensure clean state on awake
+        ClearSlot(); 
     }
 
     /// <summary>
-    /// Updates the slot display with the given item data and quantity.
+    /// Updates the slot display.
     /// </summary>
     public void UpdateSlot(InventoryItemData itemData, int quantity)
     {
@@ -55,14 +39,13 @@ public class InventorySlot : MonoBehaviour
 
         if (currentItemData != null && currentQuantity > 0)
         {
-            // Update Icon
             if (iconImage != null)
             {
                 iconImage.sprite = currentItemData.icon;
                 iconImage.enabled = true;
             }
 
-            // Update Quantity Text (only show if stackable and quantity > 1)
+            // Show quantity text only if stackable and quantity > 1
             if (quantityText != null)
             {
                 bool showQuantity = currentItemData.canStack && currentQuantity > 1;
@@ -72,12 +55,11 @@ public class InventorySlot : MonoBehaviour
                     quantityText.text = currentQuantity.ToString();
                 }
             }
-            // Enable button interaction if needed
+            // Optional: Enable button interaction
             // if (slotButton != null) slotButton.interactable = true;
         }
         else
         {
-            // Clear the slot if no item or zero quantity
             ClearSlot();
         }
     }
@@ -99,10 +81,9 @@ public class InventorySlot : MonoBehaviour
         { 
             quantityText.gameObject.SetActive(false);
         }
-        // Disable button interaction if needed
+        // Optional: Disable button interaction
         // if (slotButton != null) slotButton.interactable = false;
 
-        // Reset background color on clear
         ResetBackgroundColor(); 
     }
 
@@ -112,7 +93,7 @@ public class InventorySlot : MonoBehaviour
         if (currentItemData != null)
         {
             Debug.Log($"Clicked on slot containing: {currentItemData.itemName}");
-            // Add logic for using/selecting the item
+            // TODO: Add logic for using/selecting the item
         }
     }
 
@@ -138,5 +119,5 @@ public class InventorySlot : MonoBehaviour
         }
     }
 
-    // Optional: Add methods for drag-and-drop if needed
+    // Optional: Add methods for drag-and-drop
 }
