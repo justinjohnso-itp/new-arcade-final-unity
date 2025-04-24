@@ -15,6 +15,6 @@ MonoBehaviour:
   itemName: Wheat
   description: A step away from bread
   icon: {fileID: 21300000, guid: 9c1b841f79cba894c9e69493db2fa6fe, type: 3}
-  itemColor: {r: 0.6603774, g: 0.31461376, b: 0.3850897, a: 1}
+  itemColor: {r: 0.9764706, g: 0.7607843, b: 0.17254902, a: 0.5882353}
   canStack: 1
   maxStackSize: 2

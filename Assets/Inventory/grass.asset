@@ -15,6 +15,6 @@ MonoBehaviour:
   itemName: Grass
   description: Not sure who ordered this
   icon: {fileID: 21300000, guid: b3579ee017fa43248a1239cfafe431b7, type: 3}
-  itemColor: {r: 0.0981132, g: 0.4811321, b: 0, a: 1}
+  itemColor: {r: 0.5803922, g: 0.76862746, b: 0.40784314, a: 0.5882353}
   canStack: 1
   maxStackSize: 2

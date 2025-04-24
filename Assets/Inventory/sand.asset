@@ -15,6 +15,6 @@ MonoBehaviour:
   itemName: Sand
   description: Make your own beach!
   icon: {fileID: 21300000, guid: 9808cca683e70724e8a0bc508c55e5bf, type: 3}
-  itemColor: {r: 0.8679245, g: 0.5484118, b: 0.27429688, a: 1}
+  itemColor: {r: 0.98039216, g: 0.95686275, b: 0.7137255, a: 0.5882353}
   canStack: 1
   maxStackSize: 3

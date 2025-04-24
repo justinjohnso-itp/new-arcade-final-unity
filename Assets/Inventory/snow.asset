@@ -15,6 +15,6 @@ MonoBehaviour:
   itemName: Snow
   description: Very quickly melting
   icon: {fileID: 21300000, guid: 41d3aa0a8e209fe478b0e2622fd4103b, type: 3}
-  itemColor: {r: 0.5257654, g: 0.6822705, b: 0.8018868, a: 1}
+  itemColor: {r: 1, g: 1, b: 1, a: 0.5882353}
   canStack: 1
   maxStackSize: 3

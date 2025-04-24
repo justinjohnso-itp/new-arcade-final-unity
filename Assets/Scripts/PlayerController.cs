@@ -8,9 +8,14 @@ public class PlayerController : MonoBehaviour
     public float horizontalSpeed = 5f;
     [Tooltip("Automatic forward movement speed")]
     public float forwardSpeed = 5f;
-    [Tooltip("Adjust forward direction slightly along the isometric Y axis (-1 to 1)")]
-    [Range(-1f, 1f)]
-    public float lateralAdjustment = 0f;
+    [Tooltip("The maximum angle (degrees) the sprite will rotate when steering fully left or right.")]
+    public float maxRotationAngle = 15f;
+    [Tooltip("How quickly the sprite rotates towards the target angle.")]
+    public float rotationSpeed = 10f;
+
+    [Header("Object References")] // Added Header
+    [Tooltip("The Transform of the child GameObject containing the player's sprite/visuals.")]
+    [SerializeField] private Transform spriteTransform; // Assign in Inspector
 
     [Header("Gameplay")]
     [Tooltip("Starting number of lives")]
@@ -19,9 +24,11 @@ public class PlayerController : MonoBehaviour
     public float packageSpawnInterval = 10f; // E.g., new package every 10 seconds
 
     private Rigidbody2D rb;
-    private int currentLives; // Internal counter
-    private bool hasPackage = false; // Does the player currently have a package?
+    private int currentLives;
+    private bool hasPackage = false;
     private float packageSpawnTimer = 0f;
+    private float currentRotationAngle = 0f;
+    private ScoreManager scoreManager; // Add reference to ScoreManager
 
     void Awake()
     {
@@ -31,6 +38,18 @@ public class PlayerController : MonoBehaviour
         hasPackage = false; // Start without a package
         packageSpawnTimer = packageSpawnInterval; // Start timer ready for first spawn
         UpdatePackageVisual(); // Update visual state initially
+
+        if (spriteTransform == null)
+        {
+            Debug.LogWarning("PlayerController: Sprite Transform is not assigned! Rotation will not work.", this);
+        }
+
+        // Find ScoreManager
+        scoreManager = FindFirstObjectByType<ScoreManager>();
+        if (scoreManager == null)
+        {
+            Debug.LogWarning("PlayerController: ScoreManager not found! Score penalties will not work.", this);
+        }
     }
 
     void Update() // Use Update for timer logic, not physics-dependent
@@ -48,34 +67,61 @@ public class PlayerController : MonoBehaviour
 
     void FixedUpdate()
     {
-        // --- Use GetAxisRaw for immediate input ---
+        // --- Input ---
         float horizontalInput = Input.GetAxisRaw("Horizontal");
 
-        Vector2 forwardDir = GameSettings.ForwardDirection;
-        Vector2 rightDir = GameSettings.IsometricYDirection;
+        // --- Rotation ---
+        HandleRotation(horizontalInput);
 
-        // Apply lateral adjustment to forward direction
-        Vector2 adjustedForwardDir = forwardDir + rightDir * lateralAdjustment * 0.2f;
-        adjustedForwardDir.Normalize();
-
-        // Calculate the INTENDED direction vector based on inputs
-        Vector2 forwardComponent = adjustedForwardDir; // Direction only
-        // Scale lateral input relative to forward speed for consistent feel
-        Vector2 lateralComponent = rightDir * horizontalInput * (horizontalSpeed / forwardSpeed);
-
-        // Combine direction components
-        Vector2 desiredDirection = (forwardComponent + lateralComponent).normalized;
-
-        // Apply the constant forward speed to the final direction
-        if (desiredDirection.sqrMagnitude > 0.01f) // Avoid normalizing zero vector if no input
-        {
-             rb.linearVelocity = desiredDirection * forwardSpeed;
-        }
-        else // If somehow input is zero, just move forward
-        {
-             rb.linearVelocity = adjustedForwardDir * forwardSpeed;
-        }
+        // --- Movement ---
+        HandleMovement(horizontalInput);
     }
+
+    private void HandleRotation(float horizontalInput)
+    {
+        if (spriteTransform == null) return; // Don't rotate if no sprite assigned
+
+        // Calculate target angle: Negative input -> positive rotation, Positive input -> negative rotation
+        float targetAngle = -horizontalInput * maxRotationAngle;
+
+        // Smoothly interpolate towards the target angle
+        currentRotationAngle = Mathf.LerpAngle(currentRotationAngle, targetAngle, Time.fixedDeltaTime * rotationSpeed);
+
+        // Apply the rotation (around Z axis for 2D)
+        spriteTransform.localRotation = Quaternion.Euler(0f, 0f, currentRotationAngle);
+    }
+
+    private void HandleMovement(float horizontalInput)
+    {
+        // --- Define Directions ---
+        Vector2 forwardDir = GameSettings.ForwardDirection;
+        // This is the isometric "up-right" direction on screen
+
+        // Calculate the actual perpendicular "right" direction relative to the forward scroll
+        // If forward is (x, y), perpendicular is (-y, x) or (y, -x).
+        // We need the one pointing screen-right relative to forwardDir.
+        // Original was (-y, x), which pointed screen-left. Correct is (y, -x).
+        Vector2 screenRightDir = new Vector2(forwardDir.y, -forwardDir.x).normalized;
+
+        // --- Calculate Velocity Components ---
+        // Base forward velocity
+        Vector2 forwardVelocity = forwardDir * forwardSpeed;
+
+        // Lateral velocity based on input and screen-relative right direction
+        Vector2 lateralVelocity = screenRightDir * horizontalInput * horizontalSpeed;
+
+        // --- Combine Velocities ---
+        // Directly add the components. Do NOT normalize here, as we want independent control over speeds.
+        rb.linearVelocity = forwardVelocity + lateralVelocity;
+
+        // --- Optional: Lateral Adjustment (Consider if still needed) ---
+        // The previous 'lateralAdjustment' was tied to the isometric Y axis.
+        // If you still want a slight drift up/down the isometric grid unrelated to steering,
+        // you could add a small component based on GameSettings.IsometricYDirection here,
+        // but it might feel less intuitive now that steering uses screenRightDir.
+        // Example: rb.linearVelocity += GameSettings.IsometricYDirection * lateralAdjustment * someFactor;
+    }
+
 
     // --- Collision & Trigger Handling ---
     void OnCollisionEnter2D(Collision2D collision)
@@ -97,6 +143,12 @@ public class PlayerController : MonoBehaviour
 
                 // Decrease player lives
                 LoseLife();
+
+                // Apply score penalty for hitting obstacle
+                if (scoreManager != null)
+                {
+                    scoreManager.AddScore(-5); // Deduct 5 points
+                }
             }
         }
         // Add other collision checks here if needed (e.g., for delivery zones)

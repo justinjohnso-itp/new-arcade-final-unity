@@ -15,6 +15,6 @@ MonoBehaviour:
   itemName: Corn
   description: Still on the cob
   icon: {fileID: 21300000, guid: da982d853de2f1840840034e1f5e8b77, type: 3}
-  itemColor: {r: 0.5394869, g: 0.9716981, b: 0.16042183, a: 1}
+  itemColor: {r: 0.22745098, g: 0.6862745, b: 0.44313726, a: 0.5882353}
   canStack: 0
   maxStackSize: 1

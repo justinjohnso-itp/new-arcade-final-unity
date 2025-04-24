@@ -64,12 +64,25 @@ public class InventoryManager : MonoBehaviour
     public System.Action OnInventoryChanged;
 
     // Reference to score manager (assign in Inspector or find)
-    // public ScoreManager scoreManager; // We'll create this script later
+    [Header("Dependencies")] // Added header for clarity
+    [Tooltip("Reference to the ScoreManager in the scene.")]
+    [SerializeField] private ScoreManager scoreManager;
 
     void Start()
     {
-        // Find ScoreManager if not assigned (example)
-        // if (scoreManager == null) scoreManager = FindObjectOfType<ScoreManager>();
+        // Find ScoreManager if not assigned in Inspector
+        if (scoreManager == null)
+        {
+            // Use FindFirstObjectByType for newer Unity versions
+            scoreManager = FindFirstObjectByType<ScoreManager>();
+            // Fallback for older versions (or keep if preferred)
+            // scoreManager = FindObjectOfType<ScoreManager>();
+
+            if (scoreManager == null)
+            {
+                Debug.LogWarning("InventoryManager: ScoreManager not found in scene and not assigned! Scoring will not work.", this);
+            }
+        }
 
         // Start the random item adding coroutine if delay is positive
         if (randomAddDelay > 0 && availableItemTypes != null && availableItemTypes.Count > 0)
@@ -208,7 +221,7 @@ public class InventoryManager : MonoBehaviour
 
     /// <summary>
     /// Removes the oldest item (at index 0) and checks if its color matches the zone color.
-    /// Adds points via ScoreManager if it matches.
+    /// Adds points via ScoreManager if it matches, or adds a smaller bonus if it mismatches.
     /// </summary>
     /// <param name="zoneColor">The required color of the delivery zone.</param>
     public void RemoveOldestItemAndScore(Color zoneColor)
@@ -232,12 +245,27 @@ public class InventoryManager : MonoBehaviour
         {
             Debug.Log($"Color match! Zone: {zoneColor}, Item: {removedItemData.itemColor}. +100 points.");
             // Add points using ScoreManager
-            // if (scoreManager != null) scoreManager.AddScore(100);
-            // else Debug.LogWarning("ScoreManager not found, cannot add score.");
+            if (scoreManager != null) // Check if scoreManager exists
+            {
+                scoreManager.AddScore(100); // Correct delivery score
+            }
+            else
+            {
+                Debug.LogWarning("ScoreManager reference missing in InventoryManager, cannot add score.");
+            }
         }
         else
         {
-            Debug.Log($"Color mismatch. Zone: {zoneColor}, Item: {removedItemData.itemColor}. No points.");
+            Debug.Log($"Color mismatch. Zone: {zoneColor}, Item: {removedItemData.itemColor}. +10 points.");
+            // Add bonus points for wrong delivery
+            if (scoreManager != null)
+            {
+                scoreManager.AddScore(10); // Wrong delivery bonus
+            }
+            else
+            {
+                Debug.LogWarning("ScoreManager reference missing in InventoryManager, cannot add score.");
+            }
         }
 
         // Notify UI
