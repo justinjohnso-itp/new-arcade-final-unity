@@ -863,9 +863,9 @@ MonoBehaviour:
   m_AudioPlay: 0
   m_DebugDrawModesUseInteractiveLightBakingData: 0
   m_Position:
-    m_Target: {x: -2.2626712, y: 2.830394, z: 0.5930962}
+    m_Target: {x: 25.237364, y: 9.378661, z: -0.3134575}
     speed: 2
-    m_Value: {x: -2.2626712, y: 2.830394, z: 0.5930962}
+    m_Value: {x: -7.047555, y: -2.9554656, z: 16.665777}
   m_RenderMode: 0
   m_CameraMode:
     drawMode: 0
@@ -915,9 +915,9 @@ MonoBehaviour:
     speed: 2
     m_Value: {x: 0, y: 0, z: 0, w: 1}
   m_Size:
-    m_Target: 4.6747303
+    m_Target: 41.345684
     speed: 2
-    m_Value: 4.6747303
+    m_Value: 6.5941844
   m_Ortho:
     m_Target: 1
     speed: 2
@@ -1342,7 +1342,7 @@ MonoBehaviour:
     m_SkipHidden: 0
     m_SearchArea: 1
     m_Folders:
-    - Assets/Isometric Medieval Pack/Sprites/Buildings
+    - Assets
     m_Globs: []
     m_ProductIds: 
     m_AnyWithAssetOrigin: 0
@@ -1362,7 +1362,7 @@ MonoBehaviour:
     scrollPos: {x: 0, y: 85.99896}
     m_SelectedIDs: 980f0100
     m_LastClickedID: 69528
-    m_ExpandedIDs: 0000000036ae000038ae00003aae00003cae00003eae000040ae000042ae0000
+    m_ExpandedIDs: 00000000acae0000aeae0000b0ae0000b2ae0000b4ae0000b6ae0000b8ae0000baae0000bcae0000beae0000c0ae0000c2ae0000c4ae0000c6ae0000c8ae0000caae0000ccae0000ceae0000d0ae0000d2ae0000d4ae0000d6ae0000d8ae0000daae0000dcae0000deae0000e0ae0000e2ae0000e4ae0000e6ae0000
     m_RenameOverlay:
       m_UserAcceptedRename: 0
       m_Name: 
@@ -1391,7 +1391,7 @@ MonoBehaviour:
     scrollPos: {x: 0, y: 0}
     m_SelectedIDs: 
     m_LastClickedID: 0
-    m_ExpandedIDs: 0000000036ae000038ae00003aae00003cae00003eae000040ae000042ae0000
+    m_ExpandedIDs: 00000000acae0000aeae0000b0ae0000b2ae0000b4ae0000b6ae0000b8ae0000baae0000bcae0000beae0000c0ae0000c2ae0000c4ae0000c6ae0000c8ae0000caae0000ccae0000ceae0000d0ae0000d2ae0000d4ae0000d6ae0000d8ae0000daae0000dcae0000deae0000e0ae0000e2ae0000e4ae0000e6ae0000
     m_RenameOverlay:
       m_UserAcceptedRename: 0
       m_Name: 
