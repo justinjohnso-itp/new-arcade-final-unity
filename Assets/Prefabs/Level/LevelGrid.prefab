@@ -920,7 +920,6 @@ GameObject:
   m_Component:
   - component: {fileID: 3898681516386875681}
   - component: {fileID: 8927985759148575764}
-  - component: {fileID: 3784900646218111829}
   m_Layer: 0
   m_Name: LevelGrid
   m_TagString: Untagged
@@ -956,40 +955,6 @@ Grid:
   m_CellGap: {x: 0, y: 0, z: 0}
   m_CellLayout: 2
   m_CellSwizzle: 0
---- !u!114 &3784900646218111829
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8226597275537900738}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1dc9411145f044ad0be72d97c3693d8c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  startChunkPrefab: {fileID: 5822609473232374486}
-  chunkPrefabs:
-  - {fileID: 2940288776114360105, guid: db202efa2f9924f838ad71e33d381e9c, type: 3}
-  initialChunks: 0
-  chunkParent: {fileID: 3898681516386875681}
-  spawnTriggerDistance: 20
-  destroyDistanceBehind: 60
-  obstaclePrefabs:
-  - {fileID: 916906795874038205, guid: 6c8a040a53bfa49ca9d462d0c6a56fa1, type: 3}
-  - {fileID: 6571129118833805574, guid: ee1c83d0e50664ee580872ab8dd9a2e5, type: 3}
-  - {fileID: 5337153172970770764, guid: 58655a981321f40e4b0a05cd6956e4ad, type: 3}
-  maxObstaclesPerChunk: 10
-  topBuildingPrefabs:
-  - {fileID: 5490956670232462756, guid: 5f28a3902bd1a429180667452b69c257, type: 3}
-  - {fileID: 547764542050275504, guid: 866ef623b7b5042c1a37cb4610af876a, type: 3}
-  bottomBuildingPrefabs:
-  - {fileID: 3452423517370847508, guid: 063ecaa541c56417890ae05c6bf2299a, type: 3}
-  minBuildingSpacing: 5
-  maxBuildingsPerArea: 4
-  zoneGroupSize: 2
-  maxZonesPerGroup: 4
-  deliveryZoneActivationChance: 0.6
 --- !u!1 &8720228576302398479
 GameObject:
   m_ObjectHideFlags: 0

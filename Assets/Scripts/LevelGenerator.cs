@@ -431,20 +431,73 @@ public class LevelGenerator : MonoBehaviour
             return; // Group limit hit
         }
 
+        // --- Check Inventory for Available Colors ---
+        InventoryManager invManager = InventoryManager.Instance;
+        if (invManager == null)
+        {
+            Debug.LogWarning("TryActivateDeliveryZone: InventoryManager not found!", buildingInstance);
+            return; // Cannot determine required color
+        }
+
+        List<InventorySlotData> currentInventory = invManager.GetInventorySlots();
+        List<Color> availableColors = new List<Color>();
+        Debug.Log($"[TryActivateDeliveryZone] Checking inventory. Slot count: {currentInventory.Count}"); // Log: Inventory size
+        foreach (InventorySlotData slotData in currentInventory)
+        {
+            if (slotData != null && slotData.itemData != null)
+            {
+                Color itemColor = slotData.itemData.itemColor;
+                Debug.Log($"[TryActivateDeliveryZone] Found item: {slotData.itemData.itemName}, Color: {itemColor}"); // Log: Item and color
+                if (!availableColors.Contains(itemColor))
+                {
+                    availableColors.Add(itemColor);
+                    Debug.Log($"[TryActivateDeliveryZone] Added unique color: {itemColor}"); // Log: Adding unique color
+                }
+            }
+        }
+
+        Debug.Log($"[TryActivateDeliveryZone] Total unique available colors: {availableColors.Count}"); // Log: Final unique color count
+
+        if (availableColors.Count == 0)
+        {
+            Debug.Log("[TryActivateDeliveryZone] No unique item colors found in inventory. Cannot activate zone.");
+            return; // Cannot activate zone if no items/colors are available
+        }
+
+        // --- Activation Logic ---
         if (Random.value <= deliveryZoneActivationChance)
         {
             // Find the placeholder child
             Transform zonePlaceholder = buildingInstance.transform.Find("DeliveryZone_Placeholder"); // Use exact name
             if (zonePlaceholder != null)
             {
-                zonePlaceholder.gameObject.SetActive(true);
+                DeliveryZone zoneScript = zonePlaceholder.GetComponent<DeliveryZone>();
+                if (zoneScript == null)
+                {
+                    // Add the component if it's missing (should be on the prefab ideally)
+                    Debug.LogWarning($"DeliveryZone component missing on placeholder for {buildingInstance.name}. Adding it.", buildingInstance);
+                    zoneScript = zonePlaceholder.gameObject.AddComponent<DeliveryZone>();
+                    // Potentially add/configure SpriteRenderer reference here if needed
+                }
+
+                // Pick a random color from the ones available in the inventory
+                Color chosenColor = availableColors[Random.Range(0, availableColors.Count)];
+                Debug.Log($"[TryActivateDeliveryZone] Randomly chosen color: {chosenColor}"); // Log: Chosen color
+
+                // Activate the zone with the chosen color
+                zoneScript.ActivateZone(chosenColor);
+
                 zonesInCurrentGroup++;
-                // Debug.Log($"Activated Delivery Zone on {buildingInstance.name}. Zones in group: {zonesInCurrentGroup}/{maxZonesPerGroup}");
+                Debug.Log($"[TryActivateDeliveryZone] Activated Delivery Zone on {buildingInstance.name} with color {chosenColor}. Zones in group: {zonesInCurrentGroup}/{maxZonesPerGroup}");
             }
             else
             {
                 Debug.LogWarning($"Building {buildingInstance.name} spawned, but 'DeliveryZone_Placeholder' child not found!", buildingInstance);
             }
+        }
+        else
+        {
+            Debug.Log("[TryActivateDeliveryZone] Activation chance failed."); // Log: Activation chance failed
         }
     }
 

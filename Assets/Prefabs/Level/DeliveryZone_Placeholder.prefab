@@ -11,13 +11,14 @@ GameObject:
   - component: {fileID: 6331413297592849525}
   - component: {fileID: 4364842290752025632}
   - component: {fileID: 4184202079305316820}
+  - component: {fileID: 5989524745947971491}
   m_Layer: 0
   m_Name: DeliveryZone_Placeholder
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &6331413297592849525
 Transform:
   m_ObjectHideFlags: 0
@@ -78,7 +79,7 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 1
   m_Sprite: {fileID: 7482667652216324306, guid: 311925a002f4447b3a28927169b83ea6, type: 3}
-  m_Color: {r: 0.7122642, g: 0.87322634, b: 1, a: 0.2}
+  m_Color: {r: 1, g: 1, b: 1, a: 0.8666667}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
@@ -134,3 +135,16 @@ BoxCollider2D:
   m_AutoTiling: 0
   m_Size: {x: 1, y: 1}
   m_EdgeRadius: 0
+--- !u!114 &5989524745947971491
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1364560722589942902}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a6a6dd9989642450f8b0443a230b6250, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  zoneVisual: {fileID: 4364842290752025632}
