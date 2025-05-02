@@ -17,6 +17,6 @@ MonoBehaviour:
 
 '
   icon: {fileID: 423075677567680309, guid: 34c027bd940e94da4aa7b9db2faa8a57, type: 3}
-  itemColor: {r: 0.9411765, g: 0.92156863, b: 0.3529412, a: 0.5882353}
+  itemColor: {r: 0.9411765, g: 0.92156863, b: 0.3529412, a: 0.78431374}
   canStack: 1
   maxStackSize: 3

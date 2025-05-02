@@ -41,6 +41,7 @@ public class PlayerInventoryController : MonoBehaviour
 
         // --- Using Old Input Manager ---
         float verticalInput = Input.GetAxisRaw("Vertical");
+        Debug.Log($"Vertical Input: {verticalInput}, Cooldown: {rotationInputCooldown}"); // <-- Log input and cooldown state
 
         // --- Using New Input System (Example - requires setup) ---
         // var keyboard = Keyboard.current;
@@ -55,8 +56,11 @@ public class PlayerInventoryController : MonoBehaviour
             // Check cooldown to prevent multiple rotations per key press
             if (!rotationInputCooldown)
             {
+                Debug.Log("Rotation threshold met, attempting rotation."); // <-- Log attempt
                 bool rotateForward = verticalInput > 0; // W or Up rotates forward (last to first)
                 inventoryManager.RotateInventory(rotateForward);
+                // Play UI click sound for inventory cycling
+                AudioManager.Instance?.PlayUIClickSound();
                 rotationInputCooldown = true;
             }
         }
@@ -75,8 +79,8 @@ public class PlayerInventoryController : MonoBehaviour
         // Check if the collided object has the obstacle tag
         if (collision.gameObject.CompareTag(obstacleTag))
         {
-            Debug.Log("Player hit an obstacle! Shuffling inventory.");
-            inventoryManager.ShuffleInventory();
+            Debug.Log("Player hit an obstacle! Shuffling disabled."); // Updated log message
+            // inventoryManager.ShuffleInventory(); // <-- Disabled shuffling
             // Optional: Add other effects like knockback, damage, sound, etc.
         }
     }

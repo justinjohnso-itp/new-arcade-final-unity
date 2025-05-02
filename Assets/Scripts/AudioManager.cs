@@ -19,10 +19,14 @@ public class AudioManager : MonoBehaviour
     public AudioClip collisionSound;
     [Tooltip("Sound played when the game over screen appears")]
     public AudioClip gameOverSound;
-    [Tooltip("Sound played when an item is picked up or delivered")]
-    public AudioClip itemPickupSound; // Assuming this might be needed
+    [Tooltip("Sound played when a correct package is delivered")]
+    public AudioClip correctDeliverySound;
+    [Tooltip("Sound played when picking up a package")]
+    public AudioClip pickupSound;
     [Tooltip("Sound played for UI interactions like button clicks or inventory cycle")]
     public AudioClip uiClickSound;
+    [Tooltip("Sound played when an incorrect package is delivered")]
+    public AudioClip incorrectDeliverySound;
     // Add more AudioClip fields here as needed
 
     [Header("Music Tracks")] // Added section
@@ -120,16 +124,29 @@ public class AudioManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Plays the item pickup/delivery sound effect.
+    /// Plays the sound effect for correct package delivery.
     /// </summary>
-     public void PlayItemPickupSound()
+    public void PlayCorrectDeliverySound()
     {
-        if (itemPickupSound != null && sfxSource != null)
+        if (correctDeliverySound != null && sfxSource != null)
         {
-            sfxSource.PlayOneShot(itemPickupSound);
-            Debug.Log("AudioManager: Playing Item Pickup Sound");
+            sfxSource.PlayOneShot(correctDeliverySound);
+            Debug.Log("AudioManager: Playing Correct Delivery Sound");
         }
-         else Debug.LogWarning("AudioManager: Item Pickup Sound not assigned!");
+        else Debug.LogWarning("AudioManager: Correct Delivery Sound not assigned!");
+    }
+
+    /// <summary>
+    /// Plays the sound effect for picking up a package.
+    /// </summary>
+    public void PlayPickupSound()
+    {
+        if (pickupSound != null && sfxSource != null)
+        {
+            sfxSource.PlayOneShot(pickupSound);
+            Debug.Log("AudioManager: Playing Pickup Sound");
+        }
+        else Debug.LogWarning("AudioManager: Pickup Sound not assigned!");
     }
 
     /// <summary>
@@ -143,6 +160,19 @@ public class AudioManager : MonoBehaviour
             Debug.Log("AudioManager: Playing UI Click Sound");
         }
          else Debug.LogWarning("AudioManager: UI Click Sound not assigned!");
+    }
+
+    /// <summary>
+    /// Plays the sound effect for incorrect package delivery.
+    /// </summary>
+    public void PlayIncorrectDeliverySound()
+    {
+        if (incorrectDeliverySound != null && sfxSource != null)
+        {
+            sfxSource.PlayOneShot(incorrectDeliverySound);
+            Debug.Log("AudioManager: Playing Incorrect Delivery Sound");
+        }
+        else Debug.LogWarning("AudioManager: Incorrect Delivery Sound not assigned!");
     }
 
     // --- Music Methods --- 

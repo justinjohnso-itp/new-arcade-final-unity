@@ -15,6 +15,6 @@ MonoBehaviour:
   itemName: Squiggle2
   description: Dark and enigmatic
   icon: {fileID: 4981627259537837620, guid: 6751dbe8ed9fc44c1bf3707ad7a17e9f, type: 3}
-  itemColor: {r: 0.9098039, g: 0.22352941, b: 0.12156863, a: 0.5882353}
+  itemColor: {r: 0.9098039, g: 0.22352941, b: 0.12156863, a: 0.78431374}
   canStack: 1
   maxStackSize: 2

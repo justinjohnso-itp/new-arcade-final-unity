@@ -15,6 +15,6 @@ MonoBehaviour:
   itemName: Square
   description: Box box
   icon: {fileID: -8316140763193872548, guid: 8e34a3112e58740538812b363483d81d, type: 3}
-  itemColor: {r: 0, g: 0.4745098, b: 0.92941177, a: 0.5882353}
+  itemColor: {r: 0, g: 0.4745098, b: 0.92941177, a: 0.78431374}
   canStack: 1
   maxStackSize: 3

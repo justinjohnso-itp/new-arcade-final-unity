@@ -1,6 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
-using System.Linq; // For Linq methods like FindIndex, Any
+using System.Linq; // Required for Linq methods like FindIndex, Any, Count, Where
 using System.Collections; // Required for Coroutines
 
 /// <summary>
@@ -50,12 +50,12 @@ public class InventoryManager : MonoBehaviour
 
     [Header("Inventory Settings")]
     [Tooltip("Maximum number of distinct item slots allowed.")]
-    [SerializeField] private int maxInventorySlots = 4;
+    public int maxInventorySlots = 4;
     [Tooltip("All possible item types that can be randomly added.")]
     [SerializeField] private List<InventoryItemData> availableItemTypes;
-    [Tooltip("Delay between random item additions (seconds). Set <= 0 to disable.")]
-    [SerializeField] private float randomAddDelay = 1.0f;
+    // Item spawn delay now driven by DifficultyManager
 
+    // List can now contain nulls to represent empty slots
     private List<InventorySlotData> inventorySlots = new List<InventorySlotData>();
     private int highlightedSlotIndex = 0; // Index of the currently selected slot for delivery
 
@@ -79,7 +79,7 @@ public class InventoryManager : MonoBehaviour
         }
 
         // Start random item adding if configured
-        if (randomAddDelay > 0 && availableItemTypes != null && availableItemTypes.Count > 0)
+        if (availableItemTypes != null && availableItemTypes.Count > 0 && DifficultyManager.Instance.GetRandomAddDelay() > 0)
         {
             StartCoroutine(RandomlyAddItemRoutine());
         }
@@ -90,11 +90,11 @@ public class InventoryManager : MonoBehaviour
     {
         while (true)
         {
-            yield return new WaitForSeconds(randomAddDelay);
+            yield return new WaitForSeconds(DifficultyManager.Instance.GetRandomAddDelay());
 
-            if (availableItemTypes.Count > 0)
+            if (availableItemTypes != null && availableItemTypes.Count > 0)
             {
-                InventoryItemData itemToAdd = availableItemTypes[Random.Range(0, availableItemTypes.Count)];
+                var itemToAdd = availableItemTypes[Random.Range(0, availableItemTypes.Count)];
                 AddItem(itemToAdd, 1);
             }
         }
@@ -102,7 +102,9 @@ public class InventoryManager : MonoBehaviour
 
 
     /// <summary>
-    /// Attempts to add an item. Stacks if possible, otherwise adds to a new slot if space allows.
+    /// Attempts to add an item. Stacks if possible, fills empty (null) slots first,
+    /// then adds to a new slot if space allows based on non-null item count.
+    /// Finally, consolidates stacks.
     /// </summary>
     public bool AddItem(InventoryItemData itemToAdd, int quantityToAdd = 1)
     {
@@ -110,12 +112,14 @@ public class InventoryManager : MonoBehaviour
 
         bool addedSuccessfully = false;
         int originalQuantity = quantityToAdd;
+        int nonNullItemCount = GetNonNullItemCount(); // Get current count before adding
 
-        // --- Stacking --- 
+        // --- Stacking ---
         if (itemToAdd.canStack)
         {
             for (int i = 0; i < inventorySlots.Count; i++)
             {
+                // Check if slot exists, is not null, matches item, and has space
                 if (inventorySlots[i] != null && inventorySlots[i].itemData == itemToAdd && inventorySlots[i].quantity < itemToAdd.maxStackSize)
                 {
                     int canAdd = itemToAdd.maxStackSize - inventorySlots[i].quantity;
@@ -130,41 +134,63 @@ public class InventoryManager : MonoBehaviour
             }
         }
 
-        // --- Add to New Slot --- 
+        // --- Fill Empty (null) Slots or Add to New Slot ---
         while (quantityToAdd > 0)
         {
-            if (inventorySlots.Count >= maxInventorySlots)
-            {
-                Debug.LogWarning($"Inventory full ({inventorySlots.Count}/{maxInventorySlots})! Could not add new slot for {itemToAdd.itemName}.");
-                break; // No more slots
-            }
+            // Find the first null slot
+            int nullIndex = inventorySlots.FindIndex(slot => slot == null);
 
-            int amountToAdd = itemToAdd.canStack ? Mathf.Min(quantityToAdd, itemToAdd.maxStackSize) : 1;
-            inventorySlots.Add(new InventorySlotData(itemToAdd, amountToAdd)); 
-            quantityToAdd -= amountToAdd;
-            addedSuccessfully = true;
+            if (nullIndex != -1) // Found an empty slot
+            {
+                int amountToAdd = itemToAdd.canStack ? Mathf.Min(quantityToAdd, itemToAdd.maxStackSize) : 1;
+                inventorySlots[nullIndex] = new InventorySlotData(itemToAdd, amountToAdd);
+                quantityToAdd -= amountToAdd;
+                addedSuccessfully = true;
+                nonNullItemCount++; // Increment count as we filled a slot
+                Debug.Log($"Filled empty slot at index {nullIndex} with {itemToAdd.itemName}");
+            }
+            else // No empty slots, try adding a new one if space allows
+            {
+                if (nonNullItemCount >= maxInventorySlots)
+                {
+                    // Use nonNullItemCount for the warning message
+                    Debug.LogWarning($"Inventory full ({nonNullItemCount}/{maxInventorySlots})! Could not add new slot for {itemToAdd.itemName}.");
+                    break; // No more slots allowed
+                }
+
+                // Add to the end of the list
+                int amountToAdd = itemToAdd.canStack ? Mathf.Min(quantityToAdd, itemToAdd.maxStackSize) : 1;
+                inventorySlots.Add(new InventorySlotData(itemToAdd, amountToAdd));
+                quantityToAdd -= amountToAdd;
+                addedSuccessfully = true;
+                nonNullItemCount++; // Increment count as we added a new slot
+                Debug.Log($"Added new slot at index {inventorySlots.Count - 1} for {itemToAdd.itemName}");
+            }
         }
 
-        // Ensure highlight index remains valid after adding
-        highlightedSlotIndex = Mathf.Clamp(highlightedSlotIndex, 0, Mathf.Max(0, inventorySlots.Count - 1));
-
+        bool consolidationMadeChange = false;
         if (addedSuccessfully)
         {
-            OnInventoryChanged?.Invoke();
+            consolidationMadeChange = ConsolidateStacks(); // Consolidate after adding
+            // No need to invoke OnInventoryChanged here, ConsolidateStacks will do it if needed,
+            // or the final check below will.
         }
-        else if (quantityToAdd < originalQuantity && inventorySlots.Count >= maxInventorySlots)
-        { 
+        // Check if any change happened (either adding or consolidating)
+        if (addedSuccessfully || consolidationMadeChange)
+        {
+             OnInventoryChanged?.Invoke();
+        }
+        else if (quantityToAdd < originalQuantity && GetNonNullItemCount() >= maxInventorySlots) // Check non-null count again
+        {
              Debug.LogWarning($"Inventory full! Could only add {originalQuantity - quantityToAdd} of {itemToAdd.itemName} to existing stacks.");
         }
 
-        return addedSuccessfully; // True if *any* quantity was added
+        return addedSuccessfully; // True if *any* quantity was initially added (before consolidation)
     }
 
     /// <summary>
     /// Attempts to remove an item. Prioritizes removing from later slots first.
-    /// Note: This might need adjustment if specific slot removal is needed elsewhere.
-    /// Consider if removing the *highlighted* item makes more sense universally.
-    /// For now, keeping original logic but adding highlight index clamp.
+    /// Sets the slot to null instead of removing it from the list if quantity reaches zero.
     /// </summary>
     public bool RemoveItem(InventoryItemData itemToRemove, int quantityToRemove = 1)
     {
@@ -173,9 +199,10 @@ public class InventoryManager : MonoBehaviour
         int quantityStillNeeded = quantityToRemove;
         bool removedAny = false;
 
-        // Iterate backwards to safely remove slots
+        // Iterate backwards
         for (int i = inventorySlots.Count - 1; i >= 0; i--)
         {
+            // Check if slot exists and is not null
             if (inventorySlots[i] != null && inventorySlots[i].itemData == itemToRemove)
             {
                 int amountToRemoveFromSlot = Mathf.Min(quantityStillNeeded, inventorySlots[i].quantity);
@@ -185,25 +212,33 @@ public class InventoryManager : MonoBehaviour
 
                 if (inventorySlots[i].quantity <= 0)
                 {
-                    inventorySlots.RemoveAt(i);
+                    inventorySlots[i] = null; // Set slot to null instead of removing
+                    Debug.Log($"Set slot {i} to null after removing {itemToRemove.itemName}.");
                 }
 
-                if (quantityStillNeeded <= 0) break; // Removed enough
+                if (quantityStillNeeded <= 0) break;
             }
         }
 
-        if (removedAny && quantityStillNeeded <= 0) // Fully removed
+        if (removedAny) // If any removal happened (partial or full)
         {
-            OnInventoryChanged?.Invoke();
-            return true;
-        }
-        else if (removedAny) // Partially removed
-        {
-             // Ensure highlight index remains valid after removing
-             highlightedSlotIndex = Mathf.Clamp(highlightedSlotIndex, 0, Mathf.Max(0, inventorySlots.Count - 1));
+             // Notify UI of removal
              OnInventoryChanged?.Invoke();
-             Debug.LogWarning($"Could only remove {quantityToRemove - quantityStillNeeded} of {itemToRemove.itemName}. Not enough in inventory.");
-             return false; 
+
+             // Consolidate any split stacks so items of the same type combine bottom-up
+             bool consolidationMadeChange = ConsolidateStacks();
+             if (consolidationMadeChange)
+             {
+                 Debug.Log("Consolidated stacks after removal.");
+                 OnInventoryChanged?.Invoke();
+             }
+
+             if (quantityStillNeeded > 0)
+             {
+                 Debug.LogWarning($"Could only remove {quantityToRemove - quantityStillNeeded} of {itemToRemove.itemName}. Not enough in inventory.");
+                 return false; // Indicate partial removal
+             }
+             return true; // Indicate full removal
         }
         else // Not found
         {
@@ -214,95 +249,156 @@ public class InventoryManager : MonoBehaviour
 
 
     /// <summary>
-    /// Removes the item at the currently highlighted index and scores based on color match with the zone.
+    /// Sets the highlighted item slot to null, scores based on color match,
+    /// finds the next appropriate non-null slot to highlight, and consolidates stacks.
     /// </summary>
-    public void RemoveHighlightedItemAndScore(Color zoneColor) // Renamed from RemoveOldestItemAndScore
+    public void RemoveHighlightedItemAndScore(Color zoneColor)
     {
-        // Check if inventory is empty or index is invalid (shouldn't happen with clamping, but good practice)
-        if (inventorySlots.Count == 0 || highlightedSlotIndex < 0 || highlightedSlotIndex >= inventorySlots.Count)
+        int countBeforeRemoval = inventorySlots.Count;
+
+        if (countBeforeRemoval == 0 || highlightedSlotIndex < 0 || highlightedSlotIndex >= countBeforeRemoval)
         {
-            Debug.Log("Inventory empty or highlighted index invalid, cannot remove item.");
+            Debug.Log($"Inventory empty or highlighted index invalid ({highlightedSlotIndex}). Cannot remove item.");
             return;
         }
 
-        InventorySlotData highlightedSlot = inventorySlots[highlightedSlotIndex];
-        InventoryItemData removedItemData = highlightedSlot.itemData;
+        int removedIndex = highlightedSlotIndex;
+        InventorySlotData removedSlot = inventorySlots[removedIndex];
+        int deliveredQuantity = removedSlot.quantity; // capture stack count for scoring
+        InventoryItemData removedItemData = removedSlot.itemData;
 
-        // Remove the item at the highlighted index
-        inventorySlots.RemoveAt(highlightedSlotIndex);
+        // Remove item and shift others down
+        inventorySlots.RemoveAt(removedIndex);
+        Debug.Log($"Removed item: {removedItemData.itemName} at index {removedIndex}.");
 
-        Debug.Log($"Removed highlighted item: {removedItemData.itemName} at index {highlightedSlotIndex}");
-
-        // Score based on color match
-        if (removedItemData.itemColor == zoneColor)
+        // Score based on color match multiplied by stack size
         {
-            Debug.Log($"Color match! Zone: {zoneColor}, Item: {removedItemData.itemColor}. +100 points.");
-            scoreManager?.AddScore(100); // Correct delivery score
+             int basePoints = (removedItemData.itemColor == zoneColor) ? 100 : 10;
+             int totalScore = basePoints * deliveredQuantity;
+             scoreManager?.AddScore(totalScore);
+             Debug.Log($"Scored {totalScore} points for delivering {deliveredQuantity}x {removedItemData.itemName} ({removedItemData.itemColor} vs {zoneColor}).");
+            // Play delivery sound: correct or incorrect
+            if (removedItemData.itemColor == zoneColor)
+                AudioManager.Instance?.PlayCorrectDeliverySound();
+            else
+                AudioManager.Instance?.PlayIncorrectDeliverySound();
+        }
+
+        // Adjust highlight index
+        int countAfterRemoval = inventorySlots.Count;
+        if (countAfterRemoval == 0)
+        {
+            highlightedSlotIndex = 0;
+        }
+        else if (removedIndex >= countAfterRemoval)
+        {
+            // Removed last item, move highlight to new last
+            highlightedSlotIndex = countAfterRemoval - 1;
         }
         else
         {
-            Debug.Log($"Color mismatch. Zone: {zoneColor}, Item: {removedItemData.itemColor}. +10 points.");
-            scoreManager?.AddScore(10); // Wrong delivery bonus
+            // Keep same index, now pointing to next item
+            highlightedSlotIndex = removedIndex;
         }
 
-        // Adjust highlight index if it's now out of bounds (points past the end)
-        highlightedSlotIndex = Mathf.Clamp(highlightedSlotIndex, 0, Mathf.Max(0, inventorySlots.Count - 1));
+        // Consolidate stacks bottom-up so same items merge wherever possible
+        bool consolidationMadeChange = ConsolidateStacks();
+        if (consolidationMadeChange)
+        {
+            Debug.Log("Consolidated stacks after delivery.");
+        }
 
+        // Notify UI of data change and any consolidation
         OnInventoryChanged?.Invoke();
     }
 
-
     /// <summary>
-    /// Randomly shuffles the order of items in the inventory data list.
-    /// Resets the highlight index to 0.
+    /// Compacts the inventory (removes nulls), shuffles the order of items,
+    /// and resets the highlight index to 0.
     /// </summary>
     public void ShuffleInventory()
     {
-        if (inventorySlots.Count <= 1) return;
+        // Filter out null slots
+        List<InventorySlotData> nonNullItems = inventorySlots.Where(slot => slot != null).ToList();
 
-        // Fisher-Yates shuffle
+        if (nonNullItems.Count <= 1) return; // No shuffle needed
+
+        // Fisher-Yates shuffle on the non-null items
         System.Random rng = new System.Random();
-        int n = inventorySlots.Count;
+        int n = nonNullItems.Count;
         while (n > 1)
         {
             n--;
             int k = rng.Next(n + 1);
-            InventorySlotData value = inventorySlots[k];
-            inventorySlots[k] = inventorySlots[n];
-            inventorySlots[n] = value;
+            InventorySlotData value = nonNullItems[k];
+            nonNullItems[k] = nonNullItems[n];
+            nonNullItems[n] = value;
         }
 
-        highlightedSlotIndex = 0; // Reset highlight to the first item after shuffle
+        // Replace the old list with the compacted and shuffled list
+        inventorySlots = nonNullItems;
+        highlightedSlotIndex = 0; // Reset highlight to the first item
 
-        Debug.Log("Inventory shuffled. Highlight reset to index 0.");
+        Debug.Log($"Inventory compacted and shuffled. Highlight reset to index 0. New count: {inventorySlots.Count}");
         OnInventoryChanged?.Invoke();
     }
 
     /// <summary>
-    /// Changes the highlighted slot index instead of rotating the list.
+    /// Changes the highlighted slot index, skipping over null slots.
     /// </summary>
     /// <param name="forward">True moves highlight down (increasing index), False moves highlight up (decreasing index).</param>
     public void RotateInventory(bool forward)
     {
-        if (inventorySlots.Count <= 1) return; // No rotation needed for 0 or 1 item
+        int nonNullCount = GetNonNullItemCount();
+        if (nonNullCount <= 1) return; // No rotation needed
 
-        int count = inventorySlots.Count;
-        if (forward) // Move highlight down (visually) -> increase index
+        int currentListSize = inventorySlots.Count;
+        if (currentListSize == 0) return; // Should not happen if nonNullCount > 1, but safe check
+
+        int originalIndex = highlightedSlotIndex;
+        int attempts = 0; // Prevent infinite loop in unlikely scenarios
+
+        do
         {
-            highlightedSlotIndex = (highlightedSlotIndex + 1) % count;
-        }
-        else // Move highlight up (visually) -> decrease index
+            if (forward) // Move highlight down (visually) -> increase index
+            {
+                highlightedSlotIndex = (highlightedSlotIndex + 1) % currentListSize;
+            }
+            else // Move highlight up (visually) -> decrease index
+            {
+                highlightedSlotIndex = (highlightedSlotIndex - 1 + currentListSize) % currentListSize;
+            }
+
+            attempts++;
+            // Break if we found a non-null slot OR we've looped entirely
+            if (inventorySlots[highlightedSlotIndex] != null || attempts >= currentListSize)
+            {
+                break;
+            }
+        } while (highlightedSlotIndex != originalIndex);
+
+        // If after checking all slots, we only found nulls (or the original),
+        // and nonNullCount > 0, something is wrong, but we default to the first non-null.
+        // This usually means we landed back on the original valid index if it was the only one.
+        if (inventorySlots[highlightedSlotIndex] == null && nonNullCount > 0)
         {
-            highlightedSlotIndex = (highlightedSlotIndex - 1 + count) % count;
+             // Fallback: find the very first non-null index
+             int firstNonNull = inventorySlots.FindIndex(slot => slot != null);
+             if(firstNonNull != -1) highlightedSlotIndex = firstNonNull;
+             else highlightedSlotIndex = 0; // Should be impossible if nonNullCount > 0
         }
 
-        Debug.Log($"Inventory highlight rotated. New index: {highlightedSlotIndex}");
-        OnInventoryChanged?.Invoke(); // Notify UI to update the highlight
+
+        if (highlightedSlotIndex != originalIndex || nonNullCount == 1) // Only log/invoke if changed or only one item
+        {
+             Debug.Log($"Inventory highlight rotated. New index: {highlightedSlotIndex}");
+             OnInventoryChanged?.Invoke(); // Notify UI to update the highlight
+        }
     }
 
 
     /// <summary>
-    /// Gets the current inventory slots data.
+    /// Gets the current inventory slots data list (may contain nulls).
     /// </summary>
     public List<InventorySlotData> GetInventorySlots()
     {
@@ -318,10 +414,75 @@ public class InventoryManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Gets the current number of occupied slots.
+    /// Gets the current number of non-null item slots.
     /// </summary>
     public int GetCurrentInventoryCount()
     {
-       return inventorySlots.Count;
+       // Use the helper method
+       return GetNonNullItemCount();
     }
+
+    /// <summary>
+    /// Helper method to count non-null slots.
+    /// </summary>
+    private int GetNonNullItemCount()
+    {
+        return inventorySlots.Count(slot => slot != null);
+    }
+
+    /// <summary>
+    /// Iterates through the inventory and merges stacks of the same item type
+    /// where possible, freeing up slots by setting merged-from slots to null.
+    /// </summary>
+    /// <returns>True if any consolidation occurred, false otherwise.</returns>
+    private bool ConsolidateStacks()
+    {
+        bool madeChange = false;
+        for (int i = 0; i < inventorySlots.Count; i++)
+        {
+            // Skip empty slots or non-stackable items
+            if (inventorySlots[i] == null || !inventorySlots[i].itemData.canStack) continue;
+
+            // Skip full stacks
+            if (inventorySlots[i].quantity >= inventorySlots[i].itemData.maxStackSize) continue;
+
+            // Look for other stacks of the same item *after* this one
+            for (int j = i + 1; j < inventorySlots.Count; j++)
+            {
+                // Skip empty slots or different items
+                if (inventorySlots[j] == null || inventorySlots[j].itemData != inventorySlots[i].itemData) continue;
+
+                // Calculate how much can be transferred to the current stack (slot i)
+                int canTransfer = Mathf.Min(inventorySlots[j].quantity, inventorySlots[i].itemData.maxStackSize - inventorySlots[i].quantity);
+
+                if (canTransfer > 0)
+                {
+                    inventorySlots[i].quantity += canTransfer;
+                    inventorySlots[j].quantity -= canTransfer;
+                    madeChange = true;
+                    Debug.Log($"Consolidated {canTransfer} of {inventorySlots[i].itemData.itemName} from slot {j} to slot {i}.");
+
+
+                    // If the source stack (slot j) is now empty, null it out
+                    if (inventorySlots[j].quantity <= 0)
+                    {
+                        inventorySlots[j] = null;
+                        Debug.Log($"Slot {j} emptied during consolidation.");
+                        // Note: We don't need to adjust highlight index here,
+                        // as it's handled after the main action (add/remove) completes.
+                    }
+
+                    // If the target stack (slot i) is now full, stop trying to add to it
+                    if (inventorySlots[i].quantity >= inventorySlots[i].itemData.maxStackSize)
+                    {
+                        break; // Move to the next primary slot (i)
+                    }
+                }
+            }
+        }
+
+        // No need to call OnInventoryChanged here - the calling methods will handle it.
+        return madeChange;
+    }
+
 }

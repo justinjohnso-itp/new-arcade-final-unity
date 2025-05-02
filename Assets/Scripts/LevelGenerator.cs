@@ -21,8 +21,6 @@ public class LevelGenerator : MonoBehaviour
     [Header("Obstacle Settings")]
     [Tooltip("List of obstacle prefabs to randomly spawn within chunks.")]
     public List<GameObject> obstaclePrefabs;
-    [Tooltip("Maximum number of obstacles to attempt spawning per chunk.")]
-    public int maxObstaclesPerChunk = 3;
 
     [Header("Building Settings")]
     [Tooltip("Building prefabs allowed in the 'Top' area (e.g., BlueHouse, Blacksmith). Must have DeliveryZone_Placeholder child (inactive).")]
@@ -36,12 +34,7 @@ public class LevelGenerator : MonoBehaviour
 
     [Header("Delivery Zone Settings")]
     [Tooltip("How many 'Road' chunks form a group for zone counting.")]
-    public int zoneGroupSize = 2;
-    [Tooltip("Maximum number of delivery zones allowed within one group of chunks.")]
-    public int maxZonesPerGroup = 4;
-    [Tooltip("Chance (0-1) to activate a delivery zone on a spawned building, if group limit not reached.")]
-    [Range(0f, 1f)]
-    public float deliveryZoneActivationChance = 0.6f; // 60% chance
+    public int zoneGroupSize = 2; // remains local grouping, zone count via manager
 
     // --- Private Fields ---
     private readonly List<GameObject> activeChunks = new List<GameObject>();
@@ -198,7 +191,8 @@ public class LevelGenerator : MonoBehaviour
 
     private void SpawnObstaclesOnChunk(GameObject chunkInstance)
     {
-        if (obstaclePrefabs == null || obstaclePrefabs.Count == 0 || maxObstaclesPerChunk <= 0) return;
+        int maxObs = DifficultyManager.Instance.GetMaxObstaclesPerChunk();
+        if (obstaclePrefabs == null || obstaclePrefabs.Count == 0 || maxObs <= 0) return;
 
         Transform spawnAreaTransform = chunkInstance.transform.Find("ObstacleSpawnArea");
         if (spawnAreaTransform == null)
@@ -216,9 +210,9 @@ public class LevelGenerator : MonoBehaviour
 
         Bounds spawnBounds = spawnBoundsCollider.bounds;
         int obstaclesSpawned = 0;
-        int maxAttempts = maxObstaclesPerChunk * 5; // Allow more attempts for rejection sampling
+        int maxAttempts = maxObs * 5; // Allow more attempts for rejection sampling
 
-        for (int attempt = 0; attempt < maxAttempts && obstaclesSpawned < maxObstaclesPerChunk; attempt++)
+        for (int attempt = 0; attempt < maxAttempts && obstaclesSpawned < maxObs; attempt++)
         {
             int obstacleIndex = Random.Range(0, obstaclePrefabs.Count);
             GameObject obstaclePrefab = obstaclePrefabs[obstacleIndex];
@@ -233,9 +227,13 @@ public class LevelGenerator : MonoBehaviour
                 continue; // Outside polygon, try again
             }
 
-            // Optional: Overlap Check (to prevent stacking)
-            // ... (code removed for brevity) ...
-
+            // Check for overlap with any existing DeliveryZone to give zones spawn priority
+            Collider2D[] overlapHits = Physics2D.OverlapPointAll(potentialSpawnPoint);
+            if (overlapHits.Any(c => c.GetComponentInParent<DeliveryZone>() != null))
+            {
+                continue; // Skip spawning obstacle here to avoid zone overlap
+            }
+            
             Instantiate(obstaclePrefab, potentialSpawnPoint, Quaternion.identity, chunkInstance.transform);
             obstaclesSpawned++;
         }
@@ -365,65 +363,59 @@ public class LevelGenerator : MonoBehaviour
 
     private void TryActivateDeliveryZone(GameObject buildingInstance)
     {
-        if (zonesInCurrentGroup >= maxZonesPerGroup) return; // Group limit hit
+        // Trigger delivery zone based on chance and current inventory colors
+        if (Random.value <= DifficultyManager.Instance.GetDeliveryChance())
+         {
+            int maxZones = DifficultyManager.Instance.GetMaxZonesPerGroup();
+            if (zonesInCurrentGroup >= maxZones) return; // Group limit hit
 
-        InventoryManager invManager = InventoryManager.Instance;
-        if (invManager == null) {
-            Debug.LogWarning("TryActivateDeliveryZone: InventoryManager not found!", buildingInstance);
-            return;
-        }
+            InventoryManager invManager = InventoryManager.Instance;
+            if (invManager == null)
+            {
+                Debug.LogWarning("TryActivateDeliveryZone: InventoryManager not found!", buildingInstance);
+                return;
+            }
 
-        // Get unique colors currently in inventory
-        List<InventorySlotData> currentInventory = invManager.GetInventorySlots();
-        List<Color> availableColors = currentInventory
-            .Where(slotData => slotData?.itemData != null)
-            .Select(slotData => slotData.itemData.itemColor)
-            .Distinct()
-            .ToList();
+            var currentInventory = invManager.GetInventorySlots();
+            var availableColors = currentInventory
+                .Where(slot => slot?.itemData != null)
+                .Select(slot => slot.itemData.itemColor)
+                .Distinct()
+                .ToList();
 
-        if (availableColors.Count == 0) {
-            Debug.Log("[TryActivateDeliveryZone] No unique item colors in inventory. Cannot activate zone.");
-            return;
-        }
+            if (availableColors.Count == 0)
+            {
+                Debug.Log("[TryActivateDeliveryZone] No unique item colors in inventory. Cannot activate zone.");
+                return;
+            }
 
-        // Activation Logic
-        if (Random.value <= deliveryZoneActivationChance)
-        {
             Transform zonePlaceholder = buildingInstance.transform.Find("DeliveryZone_Placeholder");
             if (zonePlaceholder != null)
             {
                 DeliveryZone zoneScript = zonePlaceholder.GetComponent<DeliveryZone>();
-                if (zoneScript == null)
+                if (zoneScript != null)
                 {
-                    Debug.LogWarning($"DeliveryZone component missing on placeholder for {buildingInstance.name}. Adding it.", buildingInstance);
-                    zoneScript = zonePlaceholder.gameObject.AddComponent<DeliveryZone>();
+                    Color chosenColor = availableColors[Random.Range(0, availableColors.Count)];
+                    zoneScript.ActivateZone(chosenColor);
+                    zonesInCurrentGroup++;
+                    Debug.Log($"[TryActivateDeliveryZone] Activated Zone on {buildingInstance.name} with color {chosenColor}. Zones in group: {zonesInCurrentGroup}/{maxZones}");
                 }
-
-                Color chosenColor = availableColors[Random.Range(0, availableColors.Count)];
-                zoneScript.ActivateZone(chosenColor);
-                zonesInCurrentGroup++;
-                Debug.Log($"[TryActivateDeliveryZone] Activated Zone on {buildingInstance.name} with color {chosenColor}. Zones in group: {zonesInCurrentGroup}/{maxZonesPerGroup}");
+                else
+                {
+                    Debug.LogWarning("TryActivateDeliveryZone: DeliveryZone component missing on placeholder!", zonePlaceholder.gameObject);
+                }
             }
-            else
-            {
-                Debug.LogWarning($"Building {buildingInstance.name} spawned, but 'DeliveryZone_Placeholder' not found!", buildingInstance);
-            }
-        }
-        else
-        {
-            Debug.Log("[TryActivateDeliveryZone] Activation chance failed.");
         }
     }
 
-    // Helper to find EndPosition transform
-    private Transform FindEndPosition(GameObject chunkInstance)
+    // Helper methods for chunk alignment
+    private Transform FindStartPosition(GameObject obj)
     {
-        return chunkInstance?.transform.Find("EndPosition");
+        return obj.transform.Find("StartPosition");
     }
 
-    // Helper to find StartPosition transform
-    private Transform FindStartPosition(GameObject prefab)
+    private Transform FindEndPosition(GameObject obj)
     {
-        return prefab?.transform.Find("StartPosition");
+        return obj.transform.Find("EndPosition");
     }
 }
