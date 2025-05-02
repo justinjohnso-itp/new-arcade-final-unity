@@ -10,7 +10,7 @@ public class InventoryUI : MonoBehaviour
     [SerializeField] private GameObject inventorySlotPrefab;
 
     [Header("Highlighting")]
-    [SerializeField] private Color bottomSlotHighlightColor = Color.blue; // Color for the oldest item slot
+    [SerializeField] private Color highlightedSlotColor = Color.blue; // Renamed from bottomSlotHighlightColor
 
     private InventoryManager inventoryManager;
     private List<InventorySlot> inventorySlotsUI = new List<InventorySlot>();
@@ -51,6 +51,7 @@ public class InventoryUI : MonoBehaviour
 
     /// <summary>
     /// Clears existing slots and instantiates new ones based on InventoryManager data.
+    /// Highlights the slot indicated by InventoryManager.
     /// </summary>
     private void UpdateUI()
     {
@@ -63,8 +64,9 @@ public class InventoryUI : MonoBehaviour
         }
         inventorySlotsUI.Clear();
 
-        // 2. Get current inventory data
+        // 2. Get current inventory data and highlighted index
         List<InventorySlotData> inventoryData = inventoryManager.GetInventorySlots();
+        int highlightedIndex = inventoryManager.GetHighlightedSlotIndex();
 
         // 3. Instantiate new UI slots
         for (int i = 0; i < inventoryData.Count; i++)
@@ -80,10 +82,14 @@ public class InventoryUI : MonoBehaviour
                     inventorySlotsUI.Add(slotUI);
                     slotUI.UpdateSlot(slotData.itemData, slotData.quantity);
 
-                    // Highlight Bottom Slot (Index 0)
-                    if (i == 0)
+                    // Highlight the correct slot based on the index from InventoryManager
+                    if (i == highlightedIndex)
                     {
-                        slotUI.SetBackgroundColor(bottomSlotHighlightColor);
+                        slotUI.SetBackgroundColor(highlightedSlotColor);
+                    }
+                    else
+                    {
+                        slotUI.ResetBackgroundColor(); // Ensure others are not highlighted
                     }
                 }
                 else
@@ -93,6 +99,6 @@ public class InventoryUI : MonoBehaviour
                 }
             }
         }
-        // Grid Layout Group handles positioning.
+        // Layout Group handles positioning.
     }
 }

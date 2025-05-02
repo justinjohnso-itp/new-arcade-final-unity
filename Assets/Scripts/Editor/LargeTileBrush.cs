@@ -29,7 +29,6 @@ public class LargeTileBrush : GridBrush
         TileBase[] nullTiles = new TileBase[area.size.x * area.size.y * area.size.z];
         tilemap.SetTilesBlock(area, nullTiles);
 
-        // Set the main tile at the anchor position.
         // We use SetTile directly here instead of base.Paint to ensure
         // we are placing the specific 'tileToPaint'.
         tilemap.SetTile(position, largeTile);

@@ -1,4 +1,5 @@
 using UnityEngine;
+using System;
 
 [RequireComponent(typeof(Rigidbody2D))]
 public class PlayerController : MonoBehaviour
@@ -23,12 +24,22 @@ public class PlayerController : MonoBehaviour
     [Tooltip("Time (seconds) between automatic package spawns.")]
     public float packageSpawnInterval = 10f;
 
+    // Events
+    public event Action<int> OnLivesChanged;
+    public event Action OnGameOver;
+
     private Rigidbody2D rb;
     private int currentLives;
     private bool hasPackage = false;
     private float packageSpawnTimer = 0f;
     private float currentRotationAngle = 0f;
     private ScoreManager scoreManager;
+
+    void Start()
+    {
+        // Play Game Music when the player controller starts in the game scene
+        AudioManager.Instance?.PlayGameMusic();
+    }
 
     void Awake()
     {
@@ -109,6 +120,9 @@ public class PlayerController : MonoBehaviour
                 obstacle.HandleHit(hitDirection);
                 LoseLife();
 
+                // Play collision sound via Singleton
+                AudioManager.Instance?.PlayCollisionSound();
+
                 // Apply score penalty
                 if (scoreManager != null)
                 {
@@ -132,7 +146,8 @@ public class PlayerController : MonoBehaviour
         hasPackage = true;
         packageSpawnTimer = packageSpawnInterval; // Reset timer
         UpdatePackageVisual();
-        // TODO: Add sound effect
+        // Play item pickup sound via Singleton
+        AudioManager.Instance?.PlayItemPickupSound();
     }
 
     // Called by DeliveryZone
@@ -142,7 +157,8 @@ public class PlayerController : MonoBehaviour
         Debug.Log("Player confirmed package delivered.");
         hasPackage = false;
         UpdatePackageVisual();
-        // TODO: Add sound effect
+        // Play item delivery sound via Singleton (using the same sound for now)
+        AudioManager.Instance?.PlayItemPickupSound(); 
     }
 
     private void UpdatePackageVisual()
@@ -158,19 +174,39 @@ public class PlayerController : MonoBehaviour
         if (currentLives <= 0) return;
         currentLives--;
         Debug.Log($"Player hit! Lives remaining: {currentLives}");
+        
+        // Notify subscribers that lives have changed
+        OnLivesChanged?.Invoke(currentLives);
+        
         // TODO: Add visual/audio feedback
-
+        
         if (currentLives <= 0)
         {
             GameOver();
         }
     }
 
+    /// <summary>
+    /// Returns the current number of lives the player has.
+    /// </summary>
+    public int GetCurrentLives()
+    {
+        return currentLives;
+    }
+
     private void GameOver()
     {
         Debug.Log("GAME OVER!");
-        // TODO: Implement game over logic (stop movement, show UI, etc.)
+
+        // Stop movement
         rb.linearVelocity = Vector2.zero;
         this.enabled = false;
+
+        // --- Add log before invoking --- 
+        Debug.Log("PlayerController: About to invoke OnGameOver event.");
+        // Notify subscribers that game is over
+        OnGameOver?.Invoke();
+
+        // Game object remains in scene so other scripts can check its state
     }
 }

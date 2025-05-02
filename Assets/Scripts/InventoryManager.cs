@@ -57,8 +57,9 @@ public class InventoryManager : MonoBehaviour
     [SerializeField] private float randomAddDelay = 1.0f;
 
     private List<InventorySlotData> inventorySlots = new List<InventorySlotData>();
+    private int highlightedSlotIndex = 0; // Index of the currently selected slot for delivery
 
-    // Event to notify UI when inventory changes
+    // Event to notify UI when inventory changes (or highlight changes)
     public System.Action OnInventoryChanged;
 
     [Header("Dependencies")]
@@ -144,6 +145,9 @@ public class InventoryManager : MonoBehaviour
             addedSuccessfully = true;
         }
 
+        // Ensure highlight index remains valid after adding
+        highlightedSlotIndex = Mathf.Clamp(highlightedSlotIndex, 0, Mathf.Max(0, inventorySlots.Count - 1));
+
         if (addedSuccessfully)
         {
             OnInventoryChanged?.Invoke();
@@ -158,6 +162,9 @@ public class InventoryManager : MonoBehaviour
 
     /// <summary>
     /// Attempts to remove an item. Prioritizes removing from later slots first.
+    /// Note: This might need adjustment if specific slot removal is needed elsewhere.
+    /// Consider if removing the *highlighted* item makes more sense universally.
+    /// For now, keeping original logic but adding highlight index clamp.
     /// </summary>
     public bool RemoveItem(InventoryItemData itemToRemove, int quantityToRemove = 1)
     {
@@ -192,6 +199,8 @@ public class InventoryManager : MonoBehaviour
         }
         else if (removedAny) // Partially removed
         {
+             // Ensure highlight index remains valid after removing
+             highlightedSlotIndex = Mathf.Clamp(highlightedSlotIndex, 0, Mathf.Max(0, inventorySlots.Count - 1));
              OnInventoryChanged?.Invoke();
              Debug.LogWarning($"Could only remove {quantityToRemove - quantityStillNeeded} of {itemToRemove.itemName}. Not enough in inventory.");
              return false; 
@@ -203,56 +212,49 @@ public class InventoryManager : MonoBehaviour
         }
     }
 
+
     /// <summary>
-    /// Removes the oldest item and scores based on color match with the zone.
+    /// Removes the item at the currently highlighted index and scores based on color match with the zone.
     /// </summary>
-    public void RemoveOldestItemAndScore(Color zoneColor)
+    public void RemoveHighlightedItemAndScore(Color zoneColor) // Renamed from RemoveOldestItemAndScore
     {
-        if (inventorySlots.Count == 0 || inventorySlots[0] == null)
+        // Check if inventory is empty or index is invalid (shouldn't happen with clamping, but good practice)
+        if (inventorySlots.Count == 0 || highlightedSlotIndex < 0 || highlightedSlotIndex >= inventorySlots.Count)
         {
-            Debug.Log("Inventory empty, cannot remove oldest item.");
+            Debug.Log("Inventory empty or highlighted index invalid, cannot remove item.");
             return;
         }
 
-        InventorySlotData oldestSlot = inventorySlots[0];
-        InventoryItemData removedItemData = oldestSlot.itemData;
+        InventorySlotData highlightedSlot = inventorySlots[highlightedSlotIndex];
+        InventoryItemData removedItemData = highlightedSlot.itemData;
 
-        inventorySlots.RemoveAt(0);
+        // Remove the item at the highlighted index
+        inventorySlots.RemoveAt(highlightedSlotIndex);
 
-        Debug.Log($"Removed oldest item: {removedItemData.itemName}");
+        Debug.Log($"Removed highlighted item: {removedItemData.itemName} at index {highlightedSlotIndex}");
 
         // Score based on color match
         if (removedItemData.itemColor == zoneColor)
         {
             Debug.Log($"Color match! Zone: {zoneColor}, Item: {removedItemData.itemColor}. +100 points.");
-            if (scoreManager != null)
-            {
-                scoreManager.AddScore(100); // Correct delivery score
-            }
-            else
-            {
-                Debug.LogWarning("ScoreManager missing, cannot add score.");
-            }
+            scoreManager?.AddScore(100); // Correct delivery score
         }
         else
         {
             Debug.Log($"Color mismatch. Zone: {zoneColor}, Item: {removedItemData.itemColor}. +10 points.");
-            if (scoreManager != null)
-            {
-                scoreManager.AddScore(10); // Wrong delivery bonus
-            }
-            else
-            {
-                Debug.LogWarning("ScoreManager missing, cannot add score.");
-            }
+            scoreManager?.AddScore(10); // Wrong delivery bonus
         }
+
+        // Adjust highlight index if it's now out of bounds (points past the end)
+        highlightedSlotIndex = Mathf.Clamp(highlightedSlotIndex, 0, Mathf.Max(0, inventorySlots.Count - 1));
 
         OnInventoryChanged?.Invoke();
     }
 
 
     /// <summary>
-    /// Randomly shuffles the order of items.
+    /// Randomly shuffles the order of items in the inventory data list.
+    /// Resets the highlight index to 0.
     /// </summary>
     public void ShuffleInventory()
     {
@@ -270,41 +272,49 @@ public class InventoryManager : MonoBehaviour
             inventorySlots[n] = value;
         }
 
-        Debug.Log("Inventory shuffled.");
+        highlightedSlotIndex = 0; // Reset highlight to the first item after shuffle
+
+        Debug.Log("Inventory shuffled. Highlight reset to index 0.");
         OnInventoryChanged?.Invoke();
     }
 
     /// <summary>
-    /// Rotates the inventory items.
+    /// Changes the highlighted slot index instead of rotating the list.
     /// </summary>
-    /// <param name="forward">True moves last item to first, False moves first item to last.</param>
+    /// <param name="forward">True moves highlight down (increasing index), False moves highlight up (decreasing index).</param>
     public void RotateInventory(bool forward)
     {
-        if (inventorySlots.Count <= 1) return;
+        if (inventorySlots.Count <= 1) return; // No rotation needed for 0 or 1 item
 
-        if (forward) // Move last to first
+        int count = inventorySlots.Count;
+        if (forward) // Move highlight down (visually) -> increase index
         {
-            InventorySlotData lastItem = inventorySlots[inventorySlots.Count - 1];
-            inventorySlots.RemoveAt(inventorySlots.Count - 1);
-            inventorySlots.Insert(0, lastItem);
+            highlightedSlotIndex = (highlightedSlotIndex + 1) % count;
         }
-        else // Move first to last
+        else // Move highlight up (visually) -> decrease index
         {
-            InventorySlotData firstItem = inventorySlots[0];
-            inventorySlots.RemoveAt(0);
-            inventorySlots.Add(firstItem);
+            highlightedSlotIndex = (highlightedSlotIndex - 1 + count) % count;
         }
 
-        OnInventoryChanged?.Invoke();
+        Debug.Log($"Inventory highlight rotated. New index: {highlightedSlotIndex}");
+        OnInventoryChanged?.Invoke(); // Notify UI to update the highlight
     }
 
 
     /// <summary>
-    /// Gets the current inventory slots.
+    /// Gets the current inventory slots data.
     /// </summary>
     public List<InventorySlotData> GetInventorySlots()
     {
         return inventorySlots;
+    }
+
+    /// <summary>
+    /// Gets the index of the currently highlighted slot.
+    /// </summary>
+    public int GetHighlightedSlotIndex()
+    {
+        return highlightedSlotIndex;
     }
 
     /// <summary>

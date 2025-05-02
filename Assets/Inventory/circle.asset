@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 854d3eaa0880f4d4da03004568a33586, type: 3}
+  m_Name: circle
+  m_EditorClassIdentifier: 
+  itemName: Circle
+  description: Round boi
+  icon: {fileID: 8897502708748876047, guid: 9f1e0b99e1d984e93b22121c4301cdff, type: 3}
+  itemColor: {r: 0.54901963, g: 0.88235295, b: 0.9843137, a: 0.5882353}
+  canStack: 1
+  maxStackSize: 2

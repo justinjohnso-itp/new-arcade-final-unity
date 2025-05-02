@@ -51,8 +51,8 @@ public class LevelGenerator : MonoBehaviour
     // Zone Group Tracking
     private int chunksInCurrentGroup = 0;
     private int zonesInCurrentGroup = 0;
-    // Temp list for building placement checks
-    private List<float> currentChunkBuildingPositionsX = new List<float>();
+    // Temp list for building placement checks within the current chunk
+    private List<Bounds> currentChunkBuildingBounds = new List<Bounds>(); // Changed from List<float>
 
 
     void Start()
@@ -180,6 +180,8 @@ public class LevelGenerator : MonoBehaviour
         // Spawn Buildings & Activate Zones only for Road chunks
         if (prefabToSpawn.name.Contains("LevelPart_Road"))
         {
+            // Clear bounds list before processing a new chunk
+            currentChunkBuildingBounds.Clear();
             SpawnBuildingsAndZonesOnChunk(chunkInstance);
 
             // Update Zone Group Counters
@@ -239,14 +241,15 @@ public class LevelGenerator : MonoBehaviour
         }
     }
 
+    // Renamed from original SpawnBuildingsAndZonesOnChunk to avoid confusion
     private void SpawnBuildingsAndZonesOnChunk(GameObject roadChunkInstance)
     {
-        currentChunkBuildingPositionsX.Clear();
-        SpawnBuildingsInArea(roadChunkInstance, "BuildingSpawnArea_Top", "Wall_Bottom", topBuildingPrefabs, true);
-        SpawnBuildingsInArea(roadChunkInstance, "BuildingSpawnArea_Bottom", "Wall_Top", bottomBuildingPrefabs, false);
+        // This method now just calls SpawnBuildingsInArea for top and bottom
+        SpawnBuildingsInArea(roadChunkInstance, "BuildingSpawnArea_Top", topBuildingPrefabs, true);
+        SpawnBuildingsInArea(roadChunkInstance, "BuildingSpawnArea_Bottom", bottomBuildingPrefabs, false);
     }
 
-    private void SpawnBuildingsInArea(GameObject roadChunkInstance, string areaName, string wallToHugName, List<GameObject> buildingPrefabs, bool hugMinY)
+    private void SpawnBuildingsInArea(GameObject roadChunkInstance, string areaName, List<GameObject> buildingPrefabs, bool hugMinY)
     {
         if (buildingPrefabs == null || buildingPrefabs.Count == 0) return;
 
@@ -261,13 +264,26 @@ public class LevelGenerator : MonoBehaviour
 
         Bounds areaBounds = areaCollider.bounds;
         int buildingsSpawnedInArea = 0;
-        int candidatesToFind = 3;
-        int maxPlacementAttemptsPerCandidate = 10;
-        int maxBuildingAttempts = maxBuildingsPerArea * 5; 
+        int candidatesToFind = 3; // How many random points to test inside the area
+        int maxPlacementAttemptsPerCandidate = 10; // How many tries to find a point inside the polygon
+        int maxBuildingAttempts = maxBuildingsPerArea * 5; // Total attempts to place buildings in this area
 
         for (int buildingAttempt = 0; buildingAttempt < maxBuildingAttempts && buildingsSpawnedInArea < maxBuildingsPerArea; buildingAttempt++)
         {
             GameObject buildingPrefab = buildingPrefabs[Random.Range(0, buildingPrefabs.Count)];
+            // --- CHANGE: Look for Collider2D in children ---
+            Collider2D prefabCollider = buildingPrefab.GetComponentInChildren<Collider2D>(); // Changed from GetComponent
+
+            if (prefabCollider == null)
+            {
+                // Updated warning message
+                Debug.LogWarning($"Building prefab '{buildingPrefab.name}' or its children are missing a Collider2D needed for bounds calculation. Skipping.", buildingPrefab);
+                continue;
+            }
+            // Note: prefabCollider.bounds is in world space relative to prefab's origin (0,0,0) if prefab is not in scene.
+            // We only need the size here, which should be correct regardless of position.
+            Vector3 prefabSize = prefabCollider.bounds.size;
+
             List<Vector3> validCandidates = new List<Vector3>();
 
             // Find Multiple Valid Candidate Positions using Rejection Sampling
@@ -277,19 +293,21 @@ public class LevelGenerator : MonoBehaviour
                 {
                     float randomX = Random.Range(areaBounds.min.x, areaBounds.max.x);
                     float randomY = Random.Range(areaBounds.min.y, areaBounds.max.y);
+                    // Use Z from area center, assuming buildings are placed flat relative to the area
                     Vector3 testPos = new Vector3(randomX, randomY, areaBounds.center.z);
 
+                    // Check if the center point is inside the polygon collider
                     if (areaCollider.OverlapPoint(testPos))
                     {
                         validCandidates.Add(testPos);
-                        break; // Found one
+                        break; // Found one candidate position, move to next candidate
                     }
                 }
             }
 
-            if (validCandidates.Count == 0) continue; 
+            if (validCandidates.Count == 0) continue; // No valid points found in the area, try next building attempt
 
-            // Select the Best Candidate (Closest to Road Edge)
+            // Select the Best Candidate (Closest to Road Edge - lowest Y for Top, highest Y for Bottom)
             Vector3 bestPos = validCandidates[0];
             if (hugMinY) // Top Area: Prefer LOWEST Y
             {
@@ -300,23 +318,43 @@ public class LevelGenerator : MonoBehaviour
                 for (int i = 1; i < validCandidates.Count; i++) { if (validCandidates[i].y > bestPos.y) bestPos = validCandidates[i]; }
             }
 
-            // Optional: Offset based on building size/pivot
-            // ... (code removed for brevity) ...
+            // --- Spacing Check using Bounds ---
+            Bounds potentialBounds = new Bounds(bestPos, prefabSize);
+            Bounds checkBounds = potentialBounds;
+            checkBounds.Expand(minBuildingSpacing); // Expand the area to check for clearance
 
-            // Check Spacing 
             bool tooClose = false;
-            foreach (float existingX in currentChunkBuildingPositionsX)
+            foreach (Bounds existingBounds in currentChunkBuildingBounds)
             {
-                if (Mathf.Abs(bestPos.x - existingX) < minBuildingSpacing) { tooClose = true; break; }
+                if (checkBounds.Intersects(existingBounds))
+                {
+                    tooClose = true;
+                    Debug.Log($"[Building Placement] Position {bestPos} for {buildingPrefab.name} too close to existing building at {existingBounds.center}. Spacing failed.");
+                    break;
+                }
             }
-            if (tooClose) continue; 
+            if (tooClose) continue; // Skip if too close, try next building attempt
 
-            // Optional Overlap Check
-            // ... (code removed for brevity) ...
-
-            // Instantiate
+            // --- Instantiate ---
             GameObject buildingInstance = Instantiate(buildingPrefab, bestPos, Quaternion.identity, roadChunkInstance.transform);
-            currentChunkBuildingPositionsX.Add(bestPos.x); 
+            // --- CHANGE: Look for Collider2D in children of the instance ---
+            Collider2D instanceCollider = buildingInstance.GetComponentInChildren<Collider2D>(); // Changed from GetComponent
+
+            // Record the actual bounds of the placed building
+            if (instanceCollider != null)
+            {
+                // instanceCollider.bounds is now correctly in world space for the instantiated object
+                currentChunkBuildingBounds.Add(instanceCollider.bounds);
+                Debug.Log($"[Building Placement] Placed {buildingInstance.name} at {bestPos}. Recorded bounds: {instanceCollider.bounds}");
+            }
+            else
+            {
+                 // Updated warning message
+                 Debug.LogWarning($"Placed building '{buildingInstance.name}' or its children have no Collider2D to record bounds.", buildingInstance);
+                 // Optionally add bounds based on prefab size as a fallback:
+                 // currentChunkBuildingBounds.Add(potentialBounds);
+            }
+
             buildingsSpawnedInArea++;
 
             // Try Activate Delivery Zone

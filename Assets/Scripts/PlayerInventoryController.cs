@@ -91,10 +91,11 @@ public class PlayerInventoryController : MonoBehaviour
         if (zone != null && zone.gameObject.activeInHierarchy) // Check if the zone is active
         {
             Debug.Log($"Player entered active Delivery Zone requiring color: {zone.RequiredColor}");
-            inventoryManager.RemoveOldestItemAndScore(zone.RequiredColor);
+            // Call the updated method to remove the HIGHLIGHTED item
+            inventoryManager.RemoveHighlightedItemAndScore(zone.RequiredColor);
 
             // Optional: Deactivate the zone after use?
-            // zone.DeactivateZone(); 
+            // zone.DeactivateZone();
             // Or maybe just play a success effect/sound
         }
     }

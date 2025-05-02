@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 854d3eaa0880f4d4da03004568a33586, type: 3}
+  m_Name: squiggle2
+  m_EditorClassIdentifier: 
+  itemName: Squiggle2
+  description: Dark and enigmatic
+  icon: {fileID: 4981627259537837620, guid: 6751dbe8ed9fc44c1bf3707ad7a17e9f, type: 3}
+  itemColor: {r: 0.9098039, g: 0.22352941, b: 0.12156863, a: 0.5882353}
+  canStack: 1
+  maxStackSize: 2
