@@ -28,7 +28,7 @@ public class LivesUI : MonoBehaviour
     [Tooltip("Color when lives are at 1")]
     [SerializeField] private Color criticalColor = Color.red;
     [Tooltip("Color to flash when gaining an extra life")]
-    [SerializeField] private Color extraLifeFlashColor = Color.blue;
+    [SerializeField] private Color extraLifeFlashColor = new Color(0.5f, 0.7f, 1.0f); // Lighter Blue
     [Tooltip("Duration of the extra life color flash")]
     [SerializeField] private float flashDuration = 0.5f;
 
