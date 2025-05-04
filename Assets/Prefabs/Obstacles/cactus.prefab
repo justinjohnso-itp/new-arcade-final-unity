@@ -187,4 +187,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   flyAwayForce: 5
   flyAwayTorque: 10
-  destroyDelay: 1.5
+  destroyDelay: 1

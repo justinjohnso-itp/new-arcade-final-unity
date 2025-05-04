@@ -150,9 +150,9 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 605469280}
-  - {fileID: 1831799631}
-  - {fileID: 246908762}
   - {fileID: 1709758657}
+  - {fileID: 246908762}
+  - {fileID: 1831799631}
   m_Father: {fileID: 1999017547}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -173,7 +173,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 0, g: 0, b: 0, a: 0.8784314}
+  m_Color: {r: 0, g: 0, b: 0, a: 0.93333334}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -232,8 +232,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0.00000011920929, y: 0.0000038146973}
-  m_SizeDelta: {x: 665.9, y: 153.39}
+  m_AnchoredPosition: {x: 0, y: -93.61888}
+  m_SizeDelta: {x: 665.9, y: 379.98}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &246908763
 MonoBehaviour:
@@ -255,9 +255,9 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 'STEERING WHEEL - MOVE LEFT/RIGHT
-
-    ROTARY WHEEL - CYCLE INVENTORY'
+  m_text: "Deliver packages by driving through the colored zones. \n\nMatching the
+    color gets you 100 points, but getting an incorrect color only gets you 10 points.\n\nSteering
+    wheel - move the car\nRotary wheel - select a package"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: ddecbc15a11ce434cb8f8da3be98ff4a, type: 2}
   m_sharedMaterial: {fileID: 6997969053918216567, guid: ddecbc15a11ce434cb8f8da3be98ff4a, type: 2}
@@ -292,7 +292,7 @@ MonoBehaviour:
   m_fontSizeMax: 72
   m_fontStyle: 33
   m_HorizontalAlignment: 2
-  m_VerticalAlignment: 512
+  m_VerticalAlignment: 256
   m_textAlignment: 65535
   m_characterSpacing: 0
   m_wordSpacing: 0
@@ -426,7 +426,7 @@ GameObject:
   - component: {fileID: 362993083}
   - component: {fileID: 362993082}
   - component: {fileID: 362993081}
-  - component: {fileID: 362993080}
+  - component: {fileID: 362993084}
   m_Layer: 0
   m_Name: AudioManager
   m_TagString: Untagged
@@ -434,28 +434,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &362993080
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 362993079}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 373b3e23e469d49d893cdc632472c553, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  sfxSource: {fileID: 362993082}
-  musicSource: {fileID: 362993081}
-  collisionSound: {fileID: 8300000, guid: 2beeb1418d9704f2da97472a2ce2670a, type: 3}
-  gameOverSound: {fileID: 8300000, guid: e97de86f21b124a84b28b53639ca0918, type: 3}
-  correctDeliverySound: {fileID: 0}
-  pickupSound: {fileID: 0}
-  uiClickSound: {fileID: 8300000, guid: 5a4fa4e814e444ab29e99b90392b1a54, type: 3}
-  incorrectDeliverySound: {fileID: 8300000, guid: a37b4263af699452cb104829fe2fb0f1, type: 3}
-  titleMusic: {fileID: 8300000, guid: 0d401c23bc1c947f5b72f0d6cde61928, type: 3}
-  gameMusic: {fileID: 8300000, guid: a362bd94bb81a4c80af1057f1b0afdb6, type: 3}
 --- !u!82 &362993081
 AudioSource:
   m_ObjectHideFlags: 0
@@ -465,7 +443,7 @@ AudioSource:
   m_GameObject: {fileID: 362993079}
   m_Enabled: 1
   serializedVersion: 4
-  OutputAudioMixerGroup: {fileID: 0}
+  OutputAudioMixerGroup: {fileID: 24300002, guid: 4b282e5f0dfc748598bf7c65f1106f8b, type: 2}
   m_audioClip: {fileID: 0}
   m_Resource: {fileID: 0}
   m_PlayOnAwake: 1
@@ -562,7 +540,7 @@ AudioSource:
   m_GameObject: {fileID: 362993079}
   m_Enabled: 1
   serializedVersion: 4
-  OutputAudioMixerGroup: {fileID: 0}
+  OutputAudioMixerGroup: {fileID: 24300002, guid: 82b1dfafe0e9f46ae905b5c402c0db98, type: 2}
   m_audioClip: {fileID: 0}
   m_Resource: {fileID: 0}
   m_PlayOnAwake: 1
@@ -665,6 +643,28 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &362993084
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 362993079}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 373b3e23e469d49d893cdc632472c553, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  sfxSource: {fileID: 362993082}
+  musicSource: {fileID: 362993081}
+  collisionSound: {fileID: 8300000, guid: 1b0dd001093904a328db4f1f43115bce, type: 3}
+  gameOverSound: {fileID: 8300000, guid: b08b1a03a6fa94b648e6bb84e242002a, type: 3}
+  correctDeliverySound: {fileID: 8300000, guid: d126c07b4e95b47fb9e0b9d1733590fd, type: 3}
+  pickupSound: {fileID: 0}
+  uiClickSound: {fileID: 8300000, guid: 8bb965bc2b5c142c2ba5cbe76d055ab5, type: 3}
+  incorrectDeliverySound: {fileID: 8300000, guid: 500d0bb3612f3487986312352a3c98b3, type: 3}
+  titleMusic: {fileID: 8300000, guid: 0666f9ca1f91e450488f96730d07060c, type: 3}
+  gameMusic: {fileID: 8300000, guid: 09a025fafebb0421d8c0548da0df8ce2, type: 3}
 --- !u!1 &605469279
 GameObject:
   m_ObjectHideFlags: 0
@@ -699,7 +699,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -0.00001502033, y: 374}
+  m_AnchoredPosition: {x: -9.094947e-13, y: 468.04123}
   m_SizeDelta: {x: 510.03, y: 167.03}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &605469281
@@ -1059,7 +1059,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -13.275691, y: 168.29817}
+  m_AnchoredPosition: {x: -13.275691, y: 253.59138}
   m_SizeDelta: {x: 1.4, y: 0.96}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!212 &1709758658
@@ -1222,7 +1222,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -0.000030517578, y: -135.895}
+  m_AnchoredPosition: {x: 0, y: -428.9537}
   m_SizeDelta: {x: 352, y: 118.4}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1831799632

@@ -430,20 +430,20 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   baseForwardSpeed: 10
-  forwardSpeedGrowthRate: 1
+  forwardSpeedGrowthRate: 1.5
   baseHorizontalSpeed: 15
   horizontalSpeedGrowthRate: 0
   baseAvailableTypes: 2
-  availableTypesGrowthRate: 0.1
+  availableTypesGrowthRate: 0.5
   baseRandomAddDelay: 3
-  randomAddDelayReductionRate: 0.1
+  randomAddDelayReductionRate: 0.2
   minRandomAddDelay: 0.2
   baseMaxObstacles: 1
-  obstaclesGrowthRate: 0.1
+  obstaclesGrowthRate: 0.3
   baseDeliveryChance: 0.3
   deliveryChanceGrowthRate: 0.1
   baseMaxZonesPerGroup: 1
-  zonesGrowthRate: 0.5
+  zonesGrowthRate: 0.3
 --- !u!1 &225991831
 GameObject:
   m_ObjectHideFlags: 0
@@ -907,7 +907,7 @@ Camera:
   far clip plane: 1000
   field of view: 34
   orthographic: 1
-  orthographic size: 15
+  orthographic size: 13
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2
@@ -951,7 +951,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   target: {fileID: 738185982}
-  offset: {x: 3, y: 0, z: -10}
+  offset: {x: 2, y: 0, z: -10}
 --- !u!1 &541454723
 GameObject:
   m_ObjectHideFlags: 0
@@ -1041,7 +1041,7 @@ AudioSource:
   m_GameObject: {fileID: 604978154}
   m_Enabled: 1
   serializedVersion: 4
-  OutputAudioMixerGroup: {fileID: 24300002, guid: fa61e2f62bf2f4680b418f2b043acb8f, type: 2}
+  OutputAudioMixerGroup: {fileID: 24300002, guid: 82b1dfafe0e9f46ae905b5c402c0db98, type: 2}
   m_audioClip: {fileID: 0}
   m_Resource: {fileID: 0}
   m_PlayOnAwake: 1
@@ -1158,14 +1158,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   sfxSource: {fileID: 604978155}
   musicSource: {fileID: 604978158}
-  collisionSound: {fileID: 8300000, guid: 2beeb1418d9704f2da97472a2ce2670a, type: 3}
-  gameOverSound: {fileID: 8300000, guid: e97de86f21b124a84b28b53639ca0918, type: 3}
-  correctDeliverySound: {fileID: 8300000, guid: 1719a071b3c7f4cb5b0b143fa136fca0, type: 3}
+  collisionSound: {fileID: 8300000, guid: 1b0dd001093904a328db4f1f43115bce, type: 3}
+  gameOverSound: {fileID: 8300000, guid: b08b1a03a6fa94b648e6bb84e242002a, type: 3}
+  correctDeliverySound: {fileID: 8300000, guid: d126c07b4e95b47fb9e0b9d1733590fd, type: 3}
   pickupSound: {fileID: 0}
-  uiClickSound: {fileID: 8300000, guid: 5a4fa4e814e444ab29e99b90392b1a54, type: 3}
-  incorrectDeliverySound: {fileID: 8300000, guid: a37b4263af699452cb104829fe2fb0f1, type: 3}
-  titleMusic: {fileID: 8300000, guid: 0d401c23bc1c947f5b72f0d6cde61928, type: 3}
-  gameMusic: {fileID: 8300000, guid: a362bd94bb81a4c80af1057f1b0afdb6, type: 3}
+  uiClickSound: {fileID: 8300000, guid: 8bb965bc2b5c142c2ba5cbe76d055ab5, type: 3}
+  incorrectDeliverySound: {fileID: 8300000, guid: 500d0bb3612f3487986312352a3c98b3, type: 3}
+  titleMusic: {fileID: 8300000, guid: 0666f9ca1f91e450488f96730d07060c, type: 3}
+  gameMusic: {fileID: 8300000, guid: 09a025fafebb0421d8c0548da0df8ce2, type: 3}
 --- !u!82 &604978158
 AudioSource:
   m_ObjectHideFlags: 0
@@ -1175,7 +1175,7 @@ AudioSource:
   m_GameObject: {fileID: 604978154}
   m_Enabled: 1
   serializedVersion: 4
-  OutputAudioMixerGroup: {fileID: 24300002, guid: a98bfe7472740461c874d4a9a1e13230, type: 2}
+  OutputAudioMixerGroup: {fileID: 24300002, guid: 4b282e5f0dfc748598bf7c65f1106f8b, type: 2}
   m_audioClip: {fileID: 0}
   m_Resource: {fileID: 0}
   m_PlayOnAwake: 1
@@ -1484,11 +1484,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f19c56045acf54a4aaf671b4d9ba639f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxRotationAngle: 20
-  rotationSpeed: 15
+  maxSteeringAngle: 30
+  rotationSpeed: 25
   spriteTransform: {fileID: 738185982}
-  startingLives: 1
-  hitShakeDuration: 0.3
+  startingLives: 5
+  hitShakeDuration: 0.2
   hitShakeIntensity: 0.2
   hitMaxRotation: 15
   hitSlowFactor: 1
@@ -1673,7 +1673,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.03, y: 0.25}
   m_AnchorMax: {x: 0.97, y: 0.32}
-  m_AnchoredPosition: {x: -12.000015, y: -11.702415}
+  m_AnchoredPosition: {x: -12.000015, y: -11.702417}
   m_SizeDelta: {x: -239.73, y: 54.01}
   m_Pivot: {x: 0, y: 0}
 --- !u!114 &836437295
@@ -1764,7 +1764,7 @@ MonoBehaviour:
   m_margin: {x: 12.5474615, y: 0.026901495, z: 0.9426727, w: 0.18822955}
   m_isUsingLegacyAnimationComponent: 0
   m_isVolumetricText: 0
-  m_hasFontAssetChanged: 1
+  m_hasFontAssetChanged: 0
   m_baseMaterial: {fileID: 0}
   m_maskOffset: {x: 0, y: 0, z: 0, w: 0}
 --- !u!222 &836437296
@@ -1874,6 +1874,11 @@ MonoBehaviour:
   shakeDuration: 0.3
   shakeIntensity: 5
   maxRotation: 15
+  defaultColor: {r: 1, g: 1, b: 1, a: 1}
+  warningColor: {r: 1, g: 0.64, b: 0, a: 1}
+  criticalColor: {r: 1, g: 0, b: 0, a: 1}
+  extraLifeFlashColor: {r: 0, g: 0, b: 1, a: 1}
+  flashDuration: 0.5
 --- !u!114 &1313766659
 MonoBehaviour:
   m_ObjectHideFlags: 0

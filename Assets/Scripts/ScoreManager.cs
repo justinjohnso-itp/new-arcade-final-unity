@@ -101,11 +101,12 @@ public class ScoreManager : MonoBehaviour
 
     /// <summary>
     /// Saves the current high score to PlayerPrefs.
+    /// Should be called when the game ends or at appropriate checkpoints.
     /// </summary>
     public void SaveHighScore()
     {
         PlayerPrefs.SetInt(HighScoreKey, highScore);
         PlayerPrefs.Save(); // Ensure data is written to disk
-        Debug.Log($"High Score {highScore} saved.");
+        Debug.Log($"Saved High Score: {highScore}");
     }
 }

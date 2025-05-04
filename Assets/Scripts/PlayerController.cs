@@ -1,15 +1,14 @@
 using UnityEngine;
 using System.Collections; // Required for hit animation coroutines
 using System;
-using UnityEngine.SceneManagement; // Required for scene reloading
 
 [RequireComponent(typeof(Rigidbody2D))]
 public class PlayerController : MonoBehaviour
 {
-    [Header("Movement Settings")] // dynamic speeds now from DifficultyManager )
-    [Tooltip("Maximum sprite rotation angle (degrees) when steering.")]
-    public float maxRotationAngle = 15f;
-    [Tooltip("How quickly the sprite rotates towards the target angle.")]
+    [Header("Movement Settings")]
+    [Tooltip("Maximum steering angle (degrees) when input is fully left/right.")] // Renamed and updated tooltip
+    public float maxSteeringAngle = 20f; // Renamed and set to 20
+    [Tooltip("How quickly the sprite rotates towards the target steering angle.")]
     public float rotationSpeed = 10f;
 
     [Header("Object References")]
@@ -19,7 +18,6 @@ public class PlayerController : MonoBehaviour
     [Header("Gameplay")]
     [Tooltip("Starting number of lives")]
     public int startingLives = 3;
-    // Package spawn interval now driven by DifficultyManager
 
     [Header("Hit Feedback")]
     [Tooltip("Duration of the sprite shake animation (seconds)")]
@@ -34,6 +32,7 @@ public class PlayerController : MonoBehaviour
     // Events
     public event Action<int> OnLivesChanged;
     public event Action OnGameOver;
+    public event Action OnExtraLifeGained; // Added event for UI feedback
 
     private Rigidbody2D rb;
     private int currentLives;
@@ -41,6 +40,7 @@ public class PlayerController : MonoBehaviour
     private float packageSpawnTimer = 0f;
     private float currentRotationAngle = 0f;
     private ScoreManager scoreManager;
+    private int nextLifeScoreThreshold = 1000; // Score needed for next extra life
 
     private Quaternion spriteOriginalLocalRotation;
     private Coroutine spriteHitCoroutine;
@@ -71,11 +71,24 @@ public class PlayerController : MonoBehaviour
         {
             Debug.LogWarning("PlayerController: ScoreManager not found! Score penalties disabled.", this);
         }
+        else
+        {
+            // Subscribe to score updates
+            scoreManager.OnScoreChanged += HandleScoreChanged;
+        }
 
         // Store the original local rotation of the sprite
         if (spriteTransform != null)
         {
             spriteOriginalLocalRotation = spriteTransform.localRotation;
+        }
+    }
+
+    void OnDestroy() // Added OnDestroy to unsubscribe
+    {
+        if (scoreManager != null)
+        {
+            scoreManager.OnScoreChanged -= HandleScoreChanged;
         }
     }
 
@@ -92,7 +105,8 @@ public class PlayerController : MonoBehaviour
 
     void FixedUpdate()
     {
-        float horizontalInput = Input.GetAxisRaw("Horizontal");
+        // Use GetAxis for analog input (-1.0 to 1.0)
+        float horizontalInput = Input.GetAxis("Horizontal");
         HandleRotation(horizontalInput);
         HandleMovement(horizontalInput);
     }
@@ -101,8 +115,12 @@ public class PlayerController : MonoBehaviour
     {
         if (spriteTransform == null) return;
 
-        // Target angle based on input (negative input -> positive rotation)
-        float targetAngle = -horizontalInput * maxRotationAngle;
+        // Target angle based on analog input (negative input -> positive rotation)
+        // Input ranges from -1.0 to 1.0, mapping directly to -maxSteeringAngle to +maxSteeringAngle
+        float targetAngle = -horizontalInput * maxSteeringAngle;
+
+        // LerpAngle smoothly interpolates towards the target angle.
+        // When input is 0, targetAngle is 0, so it smoothly returns to center.
         currentRotationAngle = Mathf.LerpAngle(currentRotationAngle, targetAngle, Time.fixedDeltaTime * rotationSpeed);
         spriteTransform.localRotation = Quaternion.Euler(0f, 0f, currentRotationAngle);
     }
@@ -158,11 +176,6 @@ public class PlayerController : MonoBehaviour
 
     // --- Package Handling Methods ---
 
-    public bool HasPackage()
-    {
-        return hasPackage;
-    }
-
     private void ReceivePackage()
     {
         if (hasPackage) return;
@@ -194,6 +207,7 @@ public class PlayerController : MonoBehaviour
     }
 
 
+    // --- Life Management ---
     private void LoseLife()
     {
         if (currentLives <= 0) return;
@@ -204,6 +218,25 @@ public class PlayerController : MonoBehaviour
         if (currentLives <= 0)
         {
             GameOver();
+        }
+    }
+
+    public void AddLife(int amount = 1) // Added method to gain lives
+    {
+        currentLives += amount;
+        Debug.Log($"Gained {amount} life! Lives remaining: {currentLives}");
+        OnLivesChanged?.Invoke(currentLives);
+        // Note: OnExtraLifeGained is invoked from HandleScoreChanged
+    }
+
+    private void HandleScoreChanged(int newScore) // Added handler for score changes
+    {
+        if (newScore >= nextLifeScoreThreshold)
+        {
+            AddLife();
+            OnExtraLifeGained?.Invoke(); // Trigger UI feedback event
+            nextLifeScoreThreshold += 1000; // Set threshold for the next one
+            Debug.Log($"Extra life granted! Next threshold: {nextLifeScoreThreshold}");
         }
     }
 
@@ -240,6 +273,11 @@ public class PlayerController : MonoBehaviour
     public int GetCurrentLives()
     {
         return currentLives;
+    }
+
+    public bool HasPackage()
+    {
+        return hasPackage;
     }
 
     // Coroutine for sprite shake animation
