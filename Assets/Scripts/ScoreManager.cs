@@ -109,4 +109,16 @@ public class ScoreManager : MonoBehaviour
         PlayerPrefs.Save(); // Ensure data is written to disk
         Debug.Log($"Saved High Score: {highScore}");
     }
+
+    /// <summary>
+    /// Resets the high score to 0 both in memory and in PlayerPrefs.
+    /// </summary>
+    public void ResetHighScore()
+    {
+        highScore = 0;
+        PlayerPrefs.SetInt(HighScoreKey, highScore);
+        PlayerPrefs.Save();
+        OnHighScoreChanged?.Invoke(highScore); // Notify listeners (like UI)
+        Debug.Log("High Score has been reset to 0.");
+    }
 }

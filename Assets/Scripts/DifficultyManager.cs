@@ -59,11 +59,12 @@ public class DifficultyManager : MonoBehaviour
             return;
         }
         Instance = this;
-        DontDestroyOnLoad(gameObject);
     }
 
     void Start()
     {
+        // Reset elapsed time explicitly on start, just in case
+        elapsedTime = 0f; 
         StartCoroutine(LogDifficulty());
     }
 
