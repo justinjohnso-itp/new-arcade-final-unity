@@ -1698,8 +1698,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: 'Combo: 0'
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
-  m_sharedMaterial: {fileID: 2100000, guid: 79459efec17a4d00a321bdcc27bbc385, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: ddecbc15a11ce434cb8f8da3be98ff4a, type: 2}
+  m_sharedMaterial: {fileID: 6997969053918216567, guid: ddecbc15a11ce434cb8f8da3be98ff4a, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -1764,7 +1764,7 @@ MonoBehaviour:
   m_margin: {x: 12.5474615, y: 0.026901495, z: 0.9426727, w: 0.18822955}
   m_isUsingLegacyAnimationComponent: 0
   m_isVolumetricText: 0
-  m_hasFontAssetChanged: 0
+  m_hasFontAssetChanged: 1
   m_baseMaterial: {fileID: 0}
   m_maskOffset: {x: 0, y: 0, z: 0, w: 0}
 --- !u!222 &836437296
@@ -1847,7 +1847,7 @@ RectTransform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1313766655}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0.00007962942}
+  m_LocalPosition: {x: 0, y: 0, z: 0.000072281655}
   m_LocalScale: {x: 0.9999606, y: 0.9999606, z: 0.9999606}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1855,7 +1855,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.03, y: 0.25}
   m_AnchorMax: {x: 0.97, y: 0.32}
-  m_AnchoredPosition: {x: 509.31998, y: 48.043663}
+  m_AnchoredPosition: {x: 468.22827, y: 48.04367}
   m_SizeDelta: {x: -509.32, y: 50.27}
   m_Pivot: {x: 0, y: 0}
 --- !u!114 &1313766657
@@ -1896,8 +1896,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: 'Lives: 0'
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
-  m_sharedMaterial: {fileID: 2100000, guid: 79459efec17a4d00a321bdcc27bbc385, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: ddecbc15a11ce434cb8f8da3be98ff4a, type: 2}
+  m_sharedMaterial: {fileID: 6997969053918216567, guid: ddecbc15a11ce434cb8f8da3be98ff4a, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -2135,7 +2135,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 'Press the button
+  m_text: 'Press button
 
     to play again'
   m_isRightToLeft: 0
@@ -2447,8 +2447,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: 'Score: 000'
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
-  m_sharedMaterial: {fileID: 2100000, guid: 79459efec17a4d00a321bdcc27bbc385, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: ddecbc15a11ce434cb8f8da3be98ff4a, type: 2}
+  m_sharedMaterial: {fileID: 6997969053918216567, guid: ddecbc15a11ce434cb8f8da3be98ff4a, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
