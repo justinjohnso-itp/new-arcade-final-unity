@@ -11,38 +11,36 @@ public class GameOverPanel : MonoBehaviour
     [Header("UI Elements")]
     [Tooltip("The 'Game Over' text element")]
     [SerializeField] private TextMeshProUGUI gameOverText;
-    [Tooltip("The final score text element")]
+    [Tooltip("The final score text element (for the current session)")] // Clarified tooltip
     [SerializeField] private TextMeshProUGUI finalScoreText;
+    [Tooltip("The high score text element")] // Added
+    [SerializeField] private TextMeshProUGUI highScoreText; // Added
     [Tooltip("Text prompting the user to play again")]
     [SerializeField] private TextMeshProUGUI playAgainText;
 
     [Header("Settings")]
     [Tooltip("Delay before showing prompt and starting auto-return timer (seconds)")]
-    [SerializeField] private float initialDelay = 1.5f; // Renamed from restartDelay
+    [SerializeField] private float initialDelay = 1.5f;
     [Tooltip("Time before automatically returning to title screen if no input (seconds)")]
-    [SerializeField] private float autoReturnTime = 5.0f; // Added
+    [SerializeField] private float autoReturnTime = 5.0f;
     [Tooltip("Name of the main game scene")]
     [SerializeField] private string gameSceneName = "MainGame";
     [Tooltip("Name of the title screen scene")]
-    [SerializeField] private string titleSceneName = "TitleScreen"; // Added
+    [SerializeField] private string titleSceneName = "TitleScreen";
 
-    [Header("Animation Settings")] // Added section
-    [Tooltip("Speed of the pulsing animation")]
+    [Header("Animation Settings")]
     [SerializeField] private float pulseSpeed = 1.5f;
-    [Tooltip("Magnitude of the scale pulse (e.g., 0.1 = 10%)")]
     [SerializeField] private float pulseMagnitude = 0.15f;
-    [Tooltip("Speed of the rotation oscillation")]
     [SerializeField] private float rotationSpeed = 2.0f;
-    [Tooltip("Maximum rotation angle (degrees)")]
     [SerializeField] private float rotationMagnitude = 5.0f;
 
     private ScoreManager scoreManager;
     private PlayerController playerController;
-    private float currentAutoReturnTimer = 0f; // Added
-    private bool isCountingDown = false; // Added
-    private bool isLoadingScene = false; // Added
-    private float originalGameOverScale; // Added
-    private Quaternion originalGameOverRotation; // Added
+    private float currentAutoReturnTimer = 0f;
+    private bool isCountingDown = false;
+    private bool isLoadingScene = false;
+    private float originalGameOverScale;
+    private Quaternion originalGameOverRotation;
 
     void Awake()
     {
@@ -57,6 +55,8 @@ public class GameOverPanel : MonoBehaviour
 
         if (finalScoreText == null)
             Debug.LogWarning("GameOverPanel Awake: Final Score Text not assigned!");
+        if (highScoreText == null) // Added check
+            Debug.LogWarning("GameOverPanel Awake: High Score Text not assigned!");
 
         // --- Moved Subscription Logic Here --- 
         Debug.Log("GameOverPanel Awake: Finding PlayerController.");
@@ -153,7 +153,7 @@ public class GameOverPanel : MonoBehaviour
     }
 
     /// <summary>
-    /// Displays the game over panel with the final score.
+    /// Displays the game over panel with the final score and high score.
     /// </summary>
     public void ShowGameOverPanel()
     {
@@ -182,39 +182,49 @@ public class GameOverPanel : MonoBehaviour
         // Play Game Over Sound via Singleton
         AudioManager.Instance?.PlayGameOverSound();
 
-        // --- ScoreManager Check --- 
+        // --- ScoreManager Check & Score Display --- 
         if (scoreManager == null)
         {
-            Debug.LogError("GameOverPanel ShowGameOverPanel: ScoreManager is NULL right before use. Attempting to find it again...");
+            Debug.LogError("GameOverPanel ShowGameOverPanel: ScoreManager is NULL. Attempting to find it again...");
             scoreManager = FindFirstObjectByType<ScoreManager>();
-            if (scoreManager == null)
+        }
+
+        if (scoreManager != null)
+        {
+            int currentScore = scoreManager.GetCurrentScore();
+            int highScore = scoreManager.GetHighScore(); // Get high score from manager
+
+            if (finalScoreText != null)
             {
-                Debug.LogError("GameOverPanel ShowGameOverPanel: Still couldn't find ScoreManager! Is it active in the scene?");
+                finalScoreText.text = $"Score: {currentScore}"; // Updated format
+                Debug.Log($"GameOverPanel ShowGameOverPanel: Set final score text to: {finalScoreText.text}");
             }
             else
             {
-                Debug.LogWarning("GameOverPanel ShowGameOverPanel: Found ScoreManager now, but it wasn't found in Start(). Check script execution order or activation timing.");
+                Debug.LogWarning("GameOverPanel ShowGameOverPanel: Final Score Text field missing.");
             }
-        }
-        // --- End ScoreManager Check ---
 
-        // Update final score if ScoreManager is available
-        if (scoreManager != null && finalScoreText != null)
-        {
-            // Ensure correct text format
-            finalScoreText.text = $"HIGH SCORE: {scoreManager.GetCurrentScore()}";
-            Debug.Log($"GameOverPanel ShowGameOverPanel: Set score text to: {finalScoreText.text}");
+            if (highScoreText != null)
+            {
+                highScoreText.text = $"High Score: {highScore}"; // Set high score text
+                Debug.Log($"GameOverPanel ShowGameOverPanel: Set high score text to: {highScoreText.text}");
+            }
+            else
+            {
+                Debug.LogWarning("GameOverPanel ShowGameOverPanel: High Score Text field missing.");
+            }
         }
         else
         {
-            Debug.LogWarning("GameOverPanel ShowGameOverPanel: Could not set score text (ScoreManager reference missing or Text field missing?).");
-            // Ensure correct text format for fallback
-            if (finalScoreText != null) finalScoreText.text = "HIGH SCORE: ???";
+            Debug.LogError("GameOverPanel ShowGameOverPanel: ScoreManager not found! Cannot display scores.");
+            if (finalScoreText != null) finalScoreText.text = "Score: ???";
+            if (highScoreText != null) highScoreText.text = "High Score: ???";
         }
+        // --- End Score Display ---
 
         // Start the initial delay before activating the countdown/prompt
         Debug.Log($"GameOverPanel ShowGameOverPanel: Invoking StartCountdown after {initialDelay} seconds.");
-        Invoke(nameof(StartCountdown), initialDelay); // Changed target method
+        Invoke(nameof(StartCountdown), initialDelay);
     }
 
     /// <summary>
@@ -250,23 +260,24 @@ public class GameOverPanel : MonoBehaviour
     {
         if (isLoadingScene) return; // Prevent double load
         isLoadingScene = true;
-        // Play UI Click Sound via Singleton
         AudioManager.Instance?.PlayUIClickSound();
         Debug.Log($"GameOverPanel: Loading game scene '{gameSceneName}'");
+        // Stop any game music before reloading
+        AudioManager.Instance?.StopMusic();
         SceneManager.LoadScene(gameSceneName);
     }
 
     /// <summary>
     /// Loads the title screen scene.
     /// </summary>
-    public void GoToTitleScreen() // Added method
+    public void GoToTitleScreen()
     {
         if (isLoadingScene) return; // Prevent double load
         isLoadingScene = true;
+        AudioManager.Instance?.PlayUIClickSound();
         Debug.Log($"GameOverPanel: Loading title scene '{titleSceneName}'");
+        // Stop any game music before loading title
+        AudioManager.Instance?.StopMusic();
         SceneManager.LoadScene(titleSceneName);
     }
-
-    // Removed the old 'canRestart' boolean field
-    // Note: The original AllowRestart method is replaced by StartCountdown
 }

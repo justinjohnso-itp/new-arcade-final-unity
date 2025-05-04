@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections; // Required for hit animation coroutines
 using System;
+using UnityEngine.SceneManagement; // Required for scene reloading
 
 [RequireComponent(typeof(Rigidbody2D))]
 public class PlayerController : MonoBehaviour
@@ -198,42 +199,50 @@ public class PlayerController : MonoBehaviour
         if (currentLives <= 0) return;
         currentLives--;
         Debug.Log($"Player hit! Lives remaining: {currentLives}");
-        
-        // Notify subscribers that lives have changed
         OnLivesChanged?.Invoke(currentLives);
-        
-        // TODO: Add visual/audio feedback
-        
+
         if (currentLives <= 0)
         {
             GameOver();
         }
     }
 
-    /// <summary>
-    /// Returns the current number of lives the player has.
-    /// </summary>
+    private void GameOver()
+    {
+        Debug.Log("Game Over!");
+
+        // --- Save High Score ---
+        if (ScoreManager.Instance != null)
+        {
+            ScoreManager.Instance.SaveHighScore();
+        }
+        else
+        {
+            Debug.LogWarning("GameOver: ScoreManager instance not found. Cannot save high score.");
+        }
+        // ---------------------
+
+        // Trigger game over event for other systems (like GameOverPanel)
+        OnGameOver?.Invoke();
+
+        // --- Removed Scene Reload --- 
+        // The GameOverPanel will now handle scene transitions (Restart or Title)
+        // AudioManager.Instance?.StopMusic(); // Music stop handled by GameOverPanel transitions
+        // SceneManager.LoadScene(SceneManager.GetActiveScene().name); 
+        // --------------------------
+
+        // Optional: Disable player movement/input here if needed
+        this.enabled = false; // Example: Disable the controller script
+        rb.linearVelocity = Vector2.zero; // Stop movement (Use linearVelocity)
+    }
+
+    // --- Public Accessors ---
     public int GetCurrentLives()
     {
         return currentLives;
     }
 
-    private void GameOver()
-    {
-        Debug.Log("GAME OVER!");
-
-        // Stop movement
-        rb.linearVelocity = Vector2.zero;
-        this.enabled = false;
-
-        // --- Add log before invoking --- 
-        Debug.Log("PlayerController: About to invoke OnGameOver event.");
-        // Notify subscribers that game is over
-        OnGameOver?.Invoke();
-
-        // Game object remains in scene so other scripts can check its state
-    }
-
+    // Coroutine for sprite shake animation
     private IEnumerator ShakeSprite(float duration)
     {
         float elapsed = 0f;

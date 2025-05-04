@@ -136,6 +136,10 @@ public class TitleScreenManager : MonoBehaviour
         if (startPromptText != null)
             startPromptText.gameObject.SetActive(false);
 
+        // Stop Title Music before loading game scene
+        AudioManager.Instance?.StopMusic();
+
+        // Load the main game scene
         SceneManager.LoadScene(gameSceneName);
     }
 }

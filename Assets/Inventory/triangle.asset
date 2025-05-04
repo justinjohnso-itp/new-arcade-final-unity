@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   itemName: Triangle
   description: It's pointy
-  icon: {fileID: 423075677567680309, guid: 34c027bd940e94da4aa7b9db2faa8a57, type: 3}
+  icon: {fileID: 1288874080099705566, guid: c837656bdc2dd4868aa6e5a08a1d45a2, type: 3}
   itemColor: {r: 0.91764706, g: 0.59607846, b: 0.6117647, a: 0.78431374}
-  canStack: 0
-  maxStackSize: 1
+  canStack: 1
+  maxStackSize: 3

@@ -2,13 +2,18 @@ using UnityEngine;
 using System;
 
 /// <summary>
-/// Manages the player's score and provides events for UI updates.
+/// Manages the player's score and high score, providing events for UI updates.
 /// Implements a Singleton pattern.
 /// </summary>
 public class ScoreManager : MonoBehaviour
 {
-    // --- Singleton Pattern --- 
+    // --- Singleton Pattern ---
     public static ScoreManager Instance { get; private set; }
+
+    // --- High Score ---
+    private const string HighScoreKey = "HighScore"; // Key for PlayerPrefs
+    private int highScore = 0;
+    public event Action<int> OnHighScoreChanged; // Event for high score updates
 
     void Awake()
     {
@@ -20,6 +25,9 @@ public class ScoreManager : MonoBehaviour
         {
             Instance = this;
             // Optional: DontDestroyOnLoad(gameObject);
+
+            // Load high score when the manager initializes
+            LoadHighScore();
         }
     }
     // -- End Singleton Pattern --
@@ -32,18 +40,28 @@ public class ScoreManager : MonoBehaviour
 
     void Start()
     {
-        // Trigger initial event for UI setup
+        // Trigger initial events for UI setup
         OnScoreChanged?.Invoke(currentScore);
+        OnHighScoreChanged?.Invoke(highScore); // Trigger high score update too
     }
 
     /// <summary>
-    /// Adds the specified amount to the current score.
+    /// Adds the specified amount to the current score and updates high score if needed.
     /// </summary>
     public void AddScore(int amount)
     {
         currentScore += amount;
         Debug.Log($"Score changed by {amount}. New score: {currentScore}");
         OnScoreChanged?.Invoke(currentScore);
+
+        // Check and update high score
+        if (currentScore > highScore)
+        {
+            highScore = currentScore;
+            OnHighScoreChanged?.Invoke(highScore);
+            Debug.Log($"New High Score: {highScore}");
+            // Note: High score is saved explicitly on game over, not every time it changes.
+        }
     }
 
     /// <summary>
@@ -55,12 +73,39 @@ public class ScoreManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Resets the score to zero.
+    /// Gets the current high score.
+    /// </summary>
+    public int GetHighScore()
+    {
+        return highScore;
+    }
+
+    /// <summary>
+    /// Resets the current score to zero. Does not reset the high score.
     /// </summary>
     public void ResetScore()
     {
         currentScore = 0;
         OnScoreChanged?.Invoke(currentScore);
-        Debug.Log("Score reset to 0.");
+        Debug.Log("Current score reset to 0.");
+    }
+
+    /// <summary>
+    /// Loads the high score from PlayerPrefs.
+    /// </summary>
+    private void LoadHighScore()
+    {
+        highScore = PlayerPrefs.GetInt(HighScoreKey, 0); // Default to 0 if not found
+        Debug.Log($"Loaded High Score: {highScore}");
+    }
+
+    /// <summary>
+    /// Saves the current high score to PlayerPrefs.
+    /// </summary>
+    public void SaveHighScore()
+    {
+        PlayerPrefs.SetInt(HighScoreKey, highScore);
+        PlayerPrefs.Save(); // Ensure data is written to disk
+        Debug.Log($"High Score {highScore} saved.");
     }
 }

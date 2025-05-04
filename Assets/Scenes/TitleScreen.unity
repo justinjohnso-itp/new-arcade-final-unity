@@ -232,8 +232,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -1.1, y: -48.19981}
-  m_SizeDelta: {x: 647.67, y: 153.39}
+  m_AnchoredPosition: {x: 0.00000011920929, y: 0.0000038146973}
+  m_SizeDelta: {x: 665.9, y: 153.39}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &246908763
 MonoBehaviour:
@@ -259,8 +259,8 @@ MonoBehaviour:
 
     ROTARY WHEEL - CYCLE INVENTORY'
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
-  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: ddecbc15a11ce434cb8f8da3be98ff4a, type: 2}
+  m_sharedMaterial: {fileID: 6997969053918216567, guid: ddecbc15a11ce434cb8f8da3be98ff4a, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -284,8 +284,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 28
-  m_fontSizeBase: 28
+  m_fontSize: 32
+  m_fontSizeBase: 32
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -450,7 +450,8 @@ MonoBehaviour:
   musicSource: {fileID: 362993081}
   collisionSound: {fileID: 8300000, guid: 2beeb1418d9704f2da97472a2ce2670a, type: 3}
   gameOverSound: {fileID: 8300000, guid: e97de86f21b124a84b28b53639ca0918, type: 3}
-  itemPickupSound: {fileID: 8300000, guid: 1719a071b3c7f4cb5b0b143fa136fca0, type: 3}
+  correctDeliverySound: {fileID: 0}
+  pickupSound: {fileID: 0}
   uiClickSound: {fileID: 8300000, guid: 5a4fa4e814e444ab29e99b90392b1a54, type: 3}
   incorrectDeliverySound: {fileID: 8300000, guid: a37b4263af699452cb104829fe2fb0f1, type: 3}
   titleMusic: {fileID: 8300000, guid: 0d401c23bc1c947f5b72f0d6cde61928, type: 3}
@@ -698,8 +699,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 374}
-  m_SizeDelta: {x: 412.7804, y: 167.0295}
+  m_AnchoredPosition: {x: -0.00001502033, y: 374}
+  m_SizeDelta: {x: 510.03, y: 167.03}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &605469281
 MonoBehaviour:
@@ -723,8 +724,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: Sender
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
-  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: ddecbc15a11ce434cb8f8da3be98ff4a, type: 2}
+  m_sharedMaterial: {fileID: 6997969053918216567, guid: ddecbc15a11ce434cb8f8da3be98ff4a, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -748,13 +749,13 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 72
-  m_fontSizeBase: 36
+  m_fontSize: 100
+  m_fontSizeBase: 100
   m_fontWeight: 400
-  m_enableAutoSizing: 1
+  m_enableAutoSizing: 0
   m_fontSizeMin: 18
   m_fontSizeMax: 72
-  m_fontStyle: 33
+  m_fontStyle: 17
   m_HorizontalAlignment: 2
   m_VerticalAlignment: 512
   m_textAlignment: 65535
@@ -1018,8 +1019,8 @@ Transform:
   m_GameObject: {fileID: 1378047009}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 75, y: 75, z: 75}
+  m_LocalPosition: {x: 36.469635, y: 136.76178, z: 0}
+  m_LocalScale: {x: 95.90625, y: 95.90625, z: 95.90625}
   m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 1999017547}
@@ -1221,8 +1222,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -0.000030518, y: -208.99896}
-  m_SizeDelta: {x: 412.7804, y: 167.0295}
+  m_AnchoredPosition: {x: -0.000030517578, y: -135.895}
+  m_SizeDelta: {x: 352, y: 118.4}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1831799632
 MonoBehaviour:
@@ -1244,10 +1245,12 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: press any button to start
+  m_text: 'press button
+
+    to start'
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
-  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: ddecbc15a11ce434cb8f8da3be98ff4a, type: 2}
+  m_sharedMaterial: {fileID: 6997969053918216567, guid: ddecbc15a11ce434cb8f8da3be98ff4a, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -1271,10 +1274,10 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 49.1
-  m_fontSizeBase: 36
+  m_fontSize: 48
+  m_fontSizeBase: 48
   m_fontWeight: 400
-  m_enableAutoSizing: 1
+  m_enableAutoSizing: 0
   m_fontSizeMin: 18
   m_fontSizeMax: 72
   m_fontStyle: 33

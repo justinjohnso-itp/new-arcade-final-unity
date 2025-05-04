@@ -1,3 +1,4 @@
+using UnityEngine.SceneManagement; // For scene load callbacks
 using UnityEngine;
 using System.Collections.Generic; // Required for Lists
 using System.Linq; // Required for LINQ methods like Where, Select, Distinct
@@ -48,12 +49,14 @@ public class LevelGenerator : MonoBehaviour
     private List<Bounds> currentChunkBuildingBounds = new List<Bounds>(); // Changed from List<float>
 
 
-    void Start()
+    // Initialize or reset level generation (spawn start and initial chunks)
+    private void InitializeLevel()
     {
-        cam = Camera.main.transform;
+        // Acquire camera and forward direction
+        cam = Camera.main?.transform;
         forwardDir = GameSettings.ForwardDirection;
 
-        // --- Validate Prefabs --- 
+        // Validate critical prefabs
         if (startChunkPrefab == null)
         {
             Debug.LogError("LevelGenerator: Start Chunk Prefab is not assigned!");
@@ -62,61 +65,89 @@ public class LevelGenerator : MonoBehaviour
         }
         if (FindStartPosition(startChunkPrefab) == null || FindEndPosition(startChunkPrefab) == null)
         {
-             Debug.LogError($"LevelGenerator: Start Chunk Prefab '{startChunkPrefab.name}' is missing StartPosition or EndPosition child.", startChunkPrefab);
-             this.enabled = false;
-             return;
+            Debug.LogError($"LevelGenerator: Start Chunk Prefab '{startChunkPrefab.name}' is missing StartPosition or EndPosition child.", startChunkPrefab);
+            this.enabled = false;
+            return;
         }
         if (chunkPrefabs == null || chunkPrefabs.Count == 0)
         {
             Debug.LogWarning("LevelGenerator: No random chunk prefabs assigned.");
         }
 
-        // --- Spawn Start Chunk --- 
-        Vector3 currentSpawnPosition = Vector3.zero;
-        GameObject startInstance = Instantiate(startChunkPrefab, currentSpawnPosition, Quaternion.identity, chunkParent);
-        activeChunks.Add(startInstance);
-        Transform lastEndPosition = FindEndPosition(startInstance);
-        if (lastEndPosition == null) return;
+        // Clear any existing chunks
+        foreach (var chunk in activeChunks) if (chunk != null) Destroy(chunk);
+        activeChunks.Clear();
+        chunksInCurrentGroup = 0;
+        zonesInCurrentGroup = 0;
 
-        // --- Spawn Additional Initial Chunks --- 
+        // Spawn start chunk
+        Vector3 startPos = Vector3.zero;
+        GameObject startInstance = Instantiate(startChunkPrefab, startPos, Quaternion.identity, chunkParent);
+        activeChunks.Add(startInstance);
+        Transform lastEnd = FindEndPosition(startInstance);
+        if (lastEnd == null) return;
+
+        // Spawn additional initial chunks
         for (int i = 0; i < initialChunks; i++)
         {
             if (chunkPrefabs == null || chunkPrefabs.Count == 0) break;
-
             int idx = Random.Range(0, chunkPrefabs.Count);
-            GameObject prefabToSpawn = chunkPrefabs[idx];
-            GameObject newChunkInstance = SpawnChunk(prefabToSpawn, lastEndPosition.position);
-
-            if (newChunkInstance != null)
+            var prefab = chunkPrefabs[idx];
+            GameObject newChunk = SpawnChunk(prefab, lastEnd.position);
+            if (newChunk == null) continue;
+            lastEnd = FindEndPosition(newChunk);
+            if (lastEnd == null)
             {
-                lastEndPosition = FindEndPosition(newChunkInstance);
-                if (lastEndPosition == null)
-                {
-                    Debug.LogError($"LevelGenerator: Spawned chunk '{newChunkInstance.name}' is missing EndPosition. Stopping initial spawn.", newChunkInstance);
-                    break;
-                }
-            }
-            else
-            {
-                Debug.LogWarning($"LevelGenerator: Failed to spawn initial random chunk (Prefab: {prefabToSpawn.name}).");
-                // break; // Optionally stop if any random chunk fails
+                Debug.LogError($"LevelGenerator: Spawned chunk '{newChunk.name}' is missing EndPosition. Stopping initial spawn.", newChunk);
+                break;
             }
         }
-
         canCheckSpawning = true;
-        chunksInCurrentGroup = 0;
-        zonesInCurrentGroup = 0;
+    }
+
+    void Start()
+    {
+        // Initial scene load
+        InitializeLevel();
+    }
+
+    void OnEnable()
+    {
+        SceneManager.sceneLoaded += OnSceneLoaded;
+    }
+
+    void OnDisable()
+    {
+        SceneManager.sceneLoaded -= OnSceneLoaded;
+    }
+
+    private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        // Reinitialize level on scene reload
+        InitializeLevel();
     }
 
     void Update()
     {
-        if (!canCheckSpawning || activeChunks.Count == 0) return; 
+        // Reacquire camera if lost and ensure spawning enabled
+        if (cam == null)
+        {
+            cam = Camera.main?.transform;
+        }
+        if (cam == null || !canCheckSpawning)
+        {
+            return;
+        }
+        // Remove destroyed chunk entries
+        activeChunks.RemoveAll(chunk => chunk == null);
+        if (activeChunks.Count == 0) return;
 
         float camDist = Vector3.Dot(cam.position, forwardDir);
 
         // 1) Spawn ahead
         var lastChunk = activeChunks[activeChunks.Count - 1];
-        if (lastChunk == null) return;
+        // Guard against destroyed or missing transform
+        if (lastChunk == null || lastChunk.transform == null) return;
         float lastDist = Vector3.Dot(lastChunk.transform.position, forwardDir);
         bool shouldSpawn = camDist >= lastDist - spawnTriggerDistance;
 
@@ -140,7 +171,7 @@ public class LevelGenerator : MonoBehaviour
 
         // 2) Destroy behind
         var firstChunk = activeChunks[0];
-        if (firstChunk == null) return;
+        if (firstChunk == null || firstChunk.transform == null) return;
         float firstDist = Vector3.Dot(firstChunk.transform.position, forwardDir);
 
         if (firstDist < camDist - destroyDistanceBehind)
