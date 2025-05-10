@@ -9,10 +9,10 @@ using UnityEngine;
 /// </summary>
 public class PlayerInventoryController : MonoBehaviour
 {
-    [Header("Input Settings")]
-    [Tooltip("How much vertical input is needed to trigger a rotation.")]
-    [SerializeField] private float rotationInputThreshold = 0.5f;
-    private bool rotationInputCooldown = false; // Prevents rapid rotation from holding key
+    // [Header("Input Settings")] // Removed vertical input specific settings
+    // [Tooltip("How much vertical input is needed to trigger a rotation.")]
+    // [SerializeField] private float rotationInputThreshold = 0.5f;
+    // private bool rotationInputCooldown = false; // Prevents rapid rotation from holding key
 
     [Header("Collision Settings")]
     [Tooltip("The tag assigned to obstacle GameObjects.")]
@@ -32,42 +32,18 @@ public class PlayerInventoryController : MonoBehaviour
 
     void Update()
     {
-        HandleRotationInput();
+        HandleInventoryCycleInput(); // Renamed for clarity
     }
 
-    private void HandleRotationInput()
+    private void HandleInventoryCycleInput() // Renamed and modified
     {
         if (inventoryManager == null) return;
 
-        // --- Using Old Input Manager ---
-        float verticalInput = Input.GetAxisRaw("Vertical");
-        Debug.Log($"Vertical Input: {verticalInput}, Cooldown: {rotationInputCooldown}"); // <-- Log input and cooldown state
-
-        // --- Using New Input System (Example - requires setup) ---
-        // var keyboard = Keyboard.current;
-        // if (keyboard == null) return; // No keyboard connected
-        // float verticalInput = 0f;
-        // if (keyboard.wKey.isPressed || keyboard.upArrowKey.isPressed) verticalInput = 1f;
-        // else if (keyboard.sKey.isPressed || keyboard.downArrowKey.isPressed) verticalInput = -1f;
-        // ---
-
-        if (Mathf.Abs(verticalInput) > rotationInputThreshold)
+        // Check for a single button press (e.g., Spacebar, often mapped to "Jump")
+        if (Input.GetButtonDown("Jump")) 
         {
-            // Check cooldown to prevent multiple rotations per key press
-            if (!rotationInputCooldown)
-            {
-                Debug.Log("Rotation threshold met, attempting rotation."); // <-- Log attempt
-                bool rotateForward = verticalInput > 0; // W or Up rotates forward (last to first)
-                inventoryManager.RotateInventory(rotateForward);
-                // Play UI click sound for inventory cycling
-                AudioManager.Instance?.PlayUIClickSound();
-                rotationInputCooldown = true;
-            }
-        }
-        else
-        {
-            // Reset cooldown when input is released
-            rotationInputCooldown = false;
+            inventoryManager.RotateInventory(true); // Always rotate forward
+            AudioManager.Instance?.PlayUIClickSound();
         }
     }
 
