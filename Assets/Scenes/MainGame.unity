@@ -429,8 +429,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 574b766bd3c414daea57a8aa6f58bee8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  baseForwardSpeed: 7
-  forwardSpeedGrowthRate: 1.5
+  baseForwardSpeed: 8
+  forwardSpeedGrowthRate: 1.7
   baseHorizontalSpeed: 15
   horizontalSpeedGrowthRate: 0
   baseAvailableTypes: 2
@@ -439,7 +439,7 @@ MonoBehaviour:
   randomAddDelayReductionRate: 0.2
   minRandomAddDelay: 0.2
   baseMaxObstacles: 1
-  obstaclesGrowthRate: 0.3
+  obstaclesGrowthRate: 0.4
   baseDeliveryChance: 0.3
   deliveryChanceGrowthRate: 0.1
   baseMaxZonesPerGroup: 1
@@ -1637,7 +1637,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6589896f17dec40f592e1ff93d1fd36a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  rotationInputThreshold: 0.5
   obstacleTag: Obstacle
 --- !u!1 &836437292
 GameObject:
